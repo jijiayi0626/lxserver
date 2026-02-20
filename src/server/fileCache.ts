@@ -105,7 +105,8 @@ export const downloadAndCache = async (songInfo: any, url: string, quality?: str
     const baseName = getFileName(songInfo, quality)
     const tempPath = path.join(dir, baseName + '.tmp')
 
-    console.log(`[FileCache] Starting download for: ${baseName} from ${url}`)
+    // console.log(`[FileCache] Starting download for: ${baseName} from ${url}`)
+    console.log(`[FileCache] Starting download for: ${baseName}`)
 
     return new Promise<void>((resolve, reject) => {
         const protocol = url.startsWith('https') ? https : http

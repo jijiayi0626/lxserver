@@ -1155,6 +1155,14 @@ const handleStartServer = async (port = 9527, ip = '127.0.0.1') => await new Pro
           const requestObj = musicSdk[source].getLyric(songInfo)
           const lyricInfo = await requestObj.promise
 
+          // console.log(`[Lyric] SDK 返回数据详情 [${source} - ${songmid}]:`, {
+          //   hasLrc: !!(lyricInfo.lyric || lyricInfo.lrc),
+          //   hasTlrc: !!lyricInfo.tlyric,
+          //   hasRlrc: !!lyricInfo.rlyric,
+          //   hasKlrc: !!(lyricInfo.klyric || lyricInfo.lxlyric),
+          //   keys: Object.keys(lyricInfo)
+          // });
+
           res.writeHead(200, {
             'Content-Type': 'application/json',
             'Cache-Control': 'public, max-age=86400' // Cache lyrics for 1 day
@@ -1659,7 +1667,8 @@ const handleStartServer = async (port = 9527, ip = '127.0.0.1') => await new Pro
                         if (!nextUrl.startsWith('http')) {
                           try { nextUrl = new URL(nextUrl, u).href } catch (e) { }
                         }
-                        console.log(`[MusicUrl] Resolving redirect (${resp.statusCode}): ${u} -> ${nextUrl}`)
+                        // console.log(`[MusicUrl] Resolving redirect (${resp.statusCode}): ${u} -> ${nextUrl}`)
+                        console.log(`[MusicUrl] Resolving redirect `)
                         return checkRedirect(nextUrl, depth + 1)
                       }
                     } catch (e: any) {

@@ -18,25 +18,25 @@
         }
     },
     {
-        "comment": "=== 版本更新 v1.5.1 ===",
-        "id": "update_v1_5_1",
+        "comment": "=== 版本更新 v1.5.2 ===",
+        "id": "update_v1_5_2",
         "status": "active",
         "type": "version",
         "logic": {
-            "target_version": "v1.5.1",
+            "target_version": "v1.5.2",
             "operator": "<",
             "interval_hours": 24
         },
         "ui": {
-            "title": "发现新版本 v1.5.1",
-            "date": "2026-02-19",
-            "message": "本次更新带来了精美的歌词卡片分享功能，并显著提升了安全性：\n1. 🖼️ 歌词卡片分享：支持生成精美卡片，多种布局/背景/字体高度自定义\n2. 🛡️ 服务端认证重构：引入 HttpOnly Cookie，有效防范绕过登录的安全风险\n3. 👤 用户隔离缓存：不同账号缓存路径分离，支持多用户环境下的缓存清理隔离\n4. 🎨 界面优化：多个布局细节调整，解决字体加载溢出及面板显示透明度问题\n5. 📜 修复及优化详见版本日志记录",
+            "title": "发现新版本 v1.5.2",
+            "date": "2026-02-20",
+            "message": "本次更新引入了期待已久的逐字歌词支持，并优化了歌词显示效果：\n1. 🎤 逐字歌词支持：新增 Karaoke 级别动效，歌词平滑扫过，支持翻译与罗马音同步。\n2. ✨ 歌词荧光效果：控制歌词点亮时的荧光氛围感，支持开关控制，让播放界面更具沉浸感。\n3. 🔧 交互逻辑优化：修复点击歌词切换状态问题，优化了非逐字歌词的点亮效果及样式细节。\n4. 📜 修复及优化详见版本日志记录",
             "confirm_text": "去查看",
             "cancel_text": "稍后提醒"
         },
         "action": {
             "type": "link",
-            "url": "https://github.com/XCQ0607/lxserver/releases/tag/v1.5.1"
+            "url": "https://github.com/XCQ0607/lxserver/releases/tag/v1.5.2"
         }
     }
 ]

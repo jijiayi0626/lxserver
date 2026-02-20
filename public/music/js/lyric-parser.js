@@ -94,20 +94,26 @@ try {
             this.lines = []
             const lines = this.lyric.split(/\r\n|\r|\n/)
             const linesMap = {}
+            // [Fix] 兼容 <起始,持续,未知>、<起始,持续> 等各种尖括号逐字标签
+            const wordExp = /<(\d+),(\d+)(?:,\d+)?>([^<]*)/g
+
+            // console.log('[LinePlayer] 准备解析歌词，原始数据前 300 字符预览:\n' + this.lyric.substring(0, 300));
+            // console.log('[LinePlayer] 是否包含 < 符号? ' + this.lyric.includes('<'));
+            // console.log('[LinePlayer] 是否包含 ( 符号? ' + this.lyric.incudes('('));
 
             for (let i = 0; i < lines.length; i++) {
                 const line = lines[i].trim()
                 let result = timeFieldExp.exec(line)
                 if (result) {
                     const timeField = result[0]
-                    const text = line.replace(timeFieldExp, '').trim()
-                    if (text) {
+                    const textContent = line.replace(timeFieldExp, '').trim()
+                    if (textContent) {
                         const times = timeField.match(timeExp)
                         if (times == null) continue
                         for (let time of times) {
                             const timeStr = formatTimeLabel(time)
                             if (linesMap[timeStr]) {
-                                linesMap[timeStr].extendedLyrics.push(text)
+                                linesMap[timeStr].extendedLyrics.push(textContent)
                                 continue
                             }
                             const timeArr = timeStr.split(':')
@@ -119,12 +125,44 @@ try {
                                 timeArr.splice(2, 1, ...timeArr[2].split('.'))
                             }
 
+                            const lineTime = parseInt(timeArr[0]) * 60 * 60 * 1000 +
+                                parseInt(timeArr[1]) * 60 * 1000 +
+                                parseInt(timeArr[2]) * 1000 +
+                                parseInt(timeArr[3] || 0);
+
+                            // 解析逐字歌词
+                            const words = []
+                            let wordMatch
+                            wordExp.lastIndex = 0; // [Fix] 重置正则偏移量，确保每行从头解析
+
+                            while ((wordMatch = wordExp.exec(textContent)) !== null) {
+                                words.push({
+                                    startTime: parseInt(wordMatch[1]),
+                                    duration: parseInt(wordMatch[2]),
+                                    text: wordMatch[3]
+                                })
+                            }
+
+                            // 针对部分源可能存在的 (start,duration) 格式兼容
+                            if (words.length === 0) {
+                                const wordExp2 = /\((\d+),(\d+)\)([^(\[]*)/g
+                                let wordMatch2
+                                while ((wordMatch2 = wordExp2.exec(textContent)) !== null) {
+                                    words.push({
+                                        startTime: parseInt(wordMatch2[1]),
+                                        duration: parseInt(wordMatch2[2]),
+                                        text: wordMatch2[3]
+                                    })
+                                }
+                            }
+
+                            // 如果没有逐字匹配，但看起来像普通的 lrc 文字
+                            const plainText = textContent.replace(/<[\d,]+>|\(\d+,\d+\)/g, '').trim()
+
                             linesMap[timeStr] = {
-                                time: parseInt(timeArr[0]) * 60 * 60 * 1000 +
-                                    parseInt(timeArr[1]) * 60 * 1000 +
-                                    parseInt(timeArr[2]) * 1000 +
-                                    parseInt(timeArr[3] || 0),
-                                text,
+                                time: lineTime,
+                                text: plainText,
+                                words: words.length > 0 ? words : null,
                                 extendedLyrics: [],
                             }
                         }
@@ -132,10 +170,18 @@ try {
                 }
             }
 
+            let wordLineCount = 0;
             for (const lrc of this.extendedLyrics) parseExtendedLyric(linesMap, lrc)
             this.lines = Object.values(linesMap)
             this.lines.sort((a, b) => a.time - b.time)
             this.maxLine = this.lines.length - 1
+
+            // 汇总解析结果日志
+            // this.lines.forEach(l => { if (l.words) wordLineCount++ });
+            // console.log(`[LinePlayer] 解析完成: 共 ${this.lines.length} 行, 其中逐字歌词行: ${wordLineCount}`);
+            // if (wordLineCount > 0) {
+            //     console.log('[LinePlayer] 第一行逐字数据示例:', this.lines.find(l => l.words));
+            // }
         }
 
         _currentTime() {
@@ -245,6 +291,11 @@ try {
             if (this.isPlay) this.pause()
             this.lyric = lyric
             this.extendedLyrics = extendedLyrics
+            console.log('[LinePlayer] setLyric', {
+                lrcLength: lyric?.length || 0,
+                extendedCount: extendedLyrics?.length || 0,
+                hasLrc: !!lyric
+            });
             this._init()
         }
     }

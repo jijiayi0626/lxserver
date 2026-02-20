@@ -53,22 +53,23 @@ let settings = {
     // Visualizer Settings (Refactored)
     showFooterVisualizer: true,
     footerVisualizerStyle: 'bars',
-    showDetailVisualizer: true,
+    showDetailVisualizer: false,
     detailVisualizerStyle: 'pulse',
-    visualizerOpacity: 0.5,
     visualizerOpacity: 0.5,
     visualizerGlobalStyle: 'blocks',
     // Cache Settings
     enableServerCache: true, // 开启服务器缓存
     serverCacheLocation: 'root', // 缓存位置: 'data' (synced) or 'root' (local)
     enableLyricCache: true,
-    enableSongUrlCache: true
+    enableSongUrlCache: true,
+    enableLyricGlow: true // 歌词荧光效果 (默认开启)
 };
 
 // 歌词原始数据，用于设置切换时重新渲染
 let currentRawLrc = '';
 let currentRawTlrc = '';
 let currentRawRlrc = '';
+let currentRawKlrc = ''; // 逐词歌词 (klyric/lxlyric)
 
 // 从 localStorage 加载设置
 try {
@@ -1961,11 +1962,10 @@ audio.addEventListener('play', () => {
     setPlayerStatus('', true); // 使用智能状态显示
     updatePlayButton(true);
 
-    // [Fix] 歌曲播放时自动同步歌词，并强制进入自动滚动模式
+    // [Notice] 我们不再在这里调用 lyricPlayer.play，而是等待 'playing' 事件
+    // 这样可以避免在网络缓冲时歌词就开始跑
     if (lyricPlayer) {
-        lyricPlayer.play(audio.currentTime * 1000);
-        isUserScrolling = false; // 切回自动滚动
-        scrollToActiveLine(true); // 立即对齐
+        isUserScrolling = false; // 切回自动滚动模式
 
         // 隐藏滚动指示器
         const indicator = document.getElementById('lyric-scroll-indicator');
@@ -1998,6 +1998,7 @@ audio.addEventListener('pause', () => {
     if (lyricPlayer) {
         lyricPlayer.pause();
     }
+    if (wordAnimationId) cancelAnimationFrame(wordAnimationId); // 立即停止行动画
     if (settings.autoResume) savePlaybackState();
 });
 
@@ -2144,7 +2145,18 @@ audio.addEventListener('ratechange', updatePositionState);
 audio.addEventListener('seeked', () => {
     updatePositionState();
     if (lyricPlayer) {
-        lyricPlayer.play(audio.currentTime * 1000);
+        if (!audio.paused) {
+            lyricPlayer.play(audio.currentTime * 1000);
+        } else {
+            // 如果处于暂停状态，只同步位置不启动计时器
+            lyricPlayer.pause();
+            const time = audio.currentTime * 1000;
+            // 找到当前行并高亮
+            const lineNum = lyricPlayer._findCurLineNum(time);
+            if (lineNum !== undefined && lineNum >= 0) {
+                syncLyricByLineNum(lineNum);
+            }
+        }
     }
 });
 audio.addEventListener('waiting', () => {
@@ -2717,6 +2729,18 @@ function syncSettingsUI(key = null, value = null) {
             if (check) check.checked = value;
         }
 
+        if (key === 'enableLyricGlow') {
+            const check = document.getElementById('setting-enable-lyric-glow');
+            if (check) check.checked = value;
+
+            // 实时应用
+            const detailView = document.getElementById('view-player-detail');
+            if (detailView) {
+                if (value) detailView.classList.add('enable-lyric-glow');
+                else detailView.classList.remove('enable-lyric-glow');
+            }
+        }
+
         // 如果有其他需要实时更新的设置，可以在这里添加
         return;
     }
@@ -2776,6 +2800,21 @@ function syncSettingsUI(key = null, value = null) {
     const shortcuts = document.getElementById('setting-enable-shortcuts');
     if (shortcuts) {
         shortcuts.checked = settings.enableKeyboardShortcuts !== false;
+    }
+
+    const lyricGlow = document.getElementById('setting-enable-lyric-glow');
+    if (lyricGlow) {
+        lyricGlow.checked = settings.enableLyricGlow !== false;
+    }
+
+    // 初始应用荧光效果
+    const detailView = document.getElementById('view-player-detail');
+    if (detailView) {
+        if (settings.enableLyricGlow !== false) {
+            detailView.classList.add('enable-lyric-glow');
+        } else {
+            detailView.classList.remove('enable-lyric-glow');
+        }
     }
 
     // 歌词设置同步
@@ -2983,6 +3022,7 @@ window.setPlayMode = setPlayMode;
 let currentLyricLines = [];
 let isLyricViewOpen = false;
 let currentLyricIndex = -1;
+let wordAnimationId = null; // 用于逐词歌词动画
 let lyricPlayer = null; // LinePlayer instance for parsing and syncing
 let isUserScrolling = false; // 用户是否正在手动滚动
 let scrollLockTimeout = null; // 滚动锁定计时器
@@ -3075,8 +3115,14 @@ async function fetchLyric(song) {
                 currentRawLrc = data.lrc || '';
                 currentRawTlrc = data.tlyric || '';
                 currentRawRlrc = data.rlyric || '';
+                currentRawKlrc = data.klyric || data.lxlyric || '';
 
-                console.log(`[Lyric] 使用缓存歌词: ${source}_${songmid}`);
+                console.log(`[Lyric] 使用缓存歌词: ${source}_${songmid}`, {
+                    hasLrc: !!currentRawLrc,
+                    hasTlrc: !!currentRawTlrc,
+                    hasRlrc: !!currentRawRlrc,
+                    hasKlyric: !!currentRawKlrc
+                });
 
                 // Initialize logic
                 initLyricPlayer();
@@ -3123,6 +3169,17 @@ async function fetchLyric(song) {
         currentRawLrc = data.lyric || data.lrc || '';
         currentRawTlrc = data.tlyric || '';
         currentRawRlrc = data.rlyric || '';
+        currentRawKlrc = data.klyric || data.lxlyric || '';
+
+        console.log(`[Lyric] 获取到网络歌词:`, {
+            source: source,
+            songmid: songmid,
+            hasLrc: !!currentRawLrc,
+            hasTlrc: !!currentRawTlrc,
+            hasRlrc: !!currentRawRlrc,
+            hasKlyric: !!currentRawKlrc,
+            dataKeys: Object.keys(data)
+        });
 
         // ===== 写入缓存 =====
         if (settings.enableLyricCache !== false && currentRawLrc) {
@@ -3130,7 +3187,8 @@ async function fetchLyric(song) {
                 const cacheData = {
                     lrc: currentRawLrc,
                     tlyric: currentRawTlrc,
-                    rlyric: currentRawRlrc
+                    rlyric: currentRawRlrc,
+                    klyric: currentRawKlrc
                 };
                 localStorage.setItem(cacheKey, JSON.stringify(cacheData));
                 updateStorageStatsUI();
@@ -3177,7 +3235,9 @@ function applyLyricUpdate() {
         extendedLyrics.push(currentRawRlrc);
     }
 
-    lyricPlayer.setLyric(currentRawLrc, extendedLyrics);
+    // 优先使用逐字歌词 (klyric/lxlyric)，如果不存在则使用普通歌词
+    const mainLyric = currentRawKlrc || currentRawLrc;
+    lyricPlayer.setLyric(mainLyric, extendedLyrics);
 
     // [Fix] 仅在音频真正播放时才启动歌词滚动
     if (!audio.paused) {
@@ -3300,8 +3360,76 @@ function syncLyricByLineNum(lineNum) {
         }
     }
 
+    // 仅在正在播放且有逐字歌词时，才启动动画循环
+    if (wordAnimationId) cancelAnimationFrame(wordAnimationId);
+    if (!audio.paused && lineNum >= 0 && lineNum < lines.length) {
+        const lineData = currentLyricLines[lineNum];
+        if (lineData && lineData.words && lineData.words.length > 0) {
+            startWordProgressUpdate(lineNum, lines[lineNum], lineData);
+        }
+    }
+
     // Perform scroll (scrollToActiveLine handles isUserScrolling check)
     scrollToActiveLine();
+}
+
+/**
+ * 启动逐字动画更新循环 (仅针对有逐字数据的行)
+ */
+function startWordProgressUpdate(lineIndex, lineEl, lineData) {
+    const wordSpans = lineEl.querySelectorAll('.word-item');
+    if (!wordSpans.length) return;
+
+    const lineStartTime = lineData.time;
+
+    // 获取该行最后一个字结束的真实时长作为整行时长
+    let lineDuration = 5000;
+    const lastWord = lineData.words[lineData.words.length - 1];
+    if (lastWord) {
+        lineDuration = lastWord.startTime + lastWord.duration;
+    }
+    if (lineDuration <= 0) lineDuration = 5000;
+
+    function update() {
+        // 如果当前播放行已改变，或音频暂停，停止动画
+        if (currentLyricIndex !== lineIndex || audio.paused) {
+            return;
+        }
+
+        const curTimeMs = audio.currentTime * 1000;
+        const relativeTime = curTimeMs - lineStartTime;
+
+        // 1. 更新整行进度 (用于带有逐字数据的翻译/罗马音平滑扫过)
+        const lineProgress = Math.min(100, Math.max(0, (relativeTime / lineDuration) * 100));
+        lineEl.style.setProperty('--line-progress', `${lineProgress}%`);
+
+        // 2. 更新逐字进度
+        wordSpans.forEach(span => {
+            const start = parseInt(span.dataset.start);
+            const duration = parseInt(span.dataset.duration);
+
+            if (relativeTime >= start + duration) {
+                // 已播放完
+                span.style.setProperty('--word-progress', '100%');
+                span.classList.add('passed');
+                span.classList.remove('playing');
+            } else if (relativeTime >= start) {
+                // 正在播放中
+                const progress = Math.min(100, Math.max(0, ((relativeTime - start) / duration) * 100));
+                span.style.setProperty('--word-progress', `${progress}%`);
+                span.classList.add('playing');
+                span.classList.remove('passed');
+            } else {
+                // 尚未播放
+                span.style.setProperty('--word-progress', '0%');
+                span.classList.remove('passed', 'playing');
+            }
+        });
+
+        wordAnimationId = requestAnimationFrame(update);
+    }
+
+    wordAnimationId = requestAnimationFrame(update);
 }
 
 // 节流函数
@@ -3466,6 +3594,13 @@ function renderLyric(lines, emptyMsg = '暂无歌词') {
         return;
     }
 
+    // 根据设置决定是否开启荧光效果
+    if (settings.enableLyricGlow !== false) {
+        container.classList.add('enable-lyric-glow');
+    } else {
+        container.classList.remove('enable-lyric-glow');
+    }
+
     // Create fragment for better performance
     const frag = document.createDocumentFragment();
 
@@ -3498,9 +3633,7 @@ function renderLyric(lines, emptyMsg = '暂无歌词') {
             const allLines = document.querySelectorAll('.lyric-line');
             allLines.forEach(l => l.classList.remove('scroll-target'));
 
-            // 播放
-            audio.play();
-            updatePlayButton(true);
+
         };
 
         // Inner content wrapper
@@ -3510,7 +3643,22 @@ function renderLyric(lines, emptyMsg = '暂无歌词') {
         // Main lyric text
         const span = document.createElement('span');
         span.className = 'font-lrc text-lg md:text-xl text-gray-500 transition-all block';
-        span.textContent = line.text;
+
+        if (line.words && line.words.length > 0) {
+            div.classList.add('has-words');
+            line.words.forEach(word => {
+                const wordSpan = document.createElement('span');
+                wordSpan.className = 'word-item';
+                wordSpan.textContent = word.text;
+                wordSpan.dataset.start = word.startTime;
+                wordSpan.dataset.duration = word.duration;
+                span.appendChild(wordSpan);
+            });
+        } else {
+            span.textContent = line.text;
+            span.classList.add('plain-lyric');
+        }
+
         contentDiv.appendChild(span);
 
         // Extended Lyrics (Translation, Romanization, etc.)
@@ -5331,34 +5479,7 @@ window.refreshComments = refreshComments;
 window.fetchComments = fetchComments;
 
 
-// Audio event listeners for lyric syncing
-if (audio) {
-    audio.addEventListener('play', () => {
-        if (lyricPlayer && lyricPlayer.lines && lyricPlayer.lines.length > 0) {
-            lyricPlayer.play(audio.currentTime * 1000);
-        }
-    });
-
-    audio.addEventListener('pause', () => {
-        if (lyricPlayer) {
-            lyricPlayer.pause();
-        }
-    });
-
-    audio.addEventListener('seeked', () => {
-        if (lyricPlayer && lyricPlayer.lines && lyricPlayer.lines.length > 0) {
-            if (!audio.paused) {
-                lyricPlayer.play(audio.currentTime * 1000);
-            } else {
-                lyricPlayer.pause();
-                const lineNum = lyricPlayer._findCurLineNum(audio.currentTime * 1000);
-                if (lineNum >= 0) {
-                    syncLyricByLineNum(lineNum);
-                }
-            }
-        }
-    });
-}
+// [Redundant block removed]
 
 // ========================================
 // UI Helper Functions (Toast Notifications)
@@ -5438,7 +5559,7 @@ function showToast(type, message, duration = 3000) {
 
     const toast = document.createElement('div');
     // 加大宽度 (w-80 / w-96), 允许点击交互, 添加 cursor-pointer
-    toast.className = `fixed bottom-24 right-4 ${conf.bg} text-white px-4 py-3 rounded-lg shadow-lg z-50 animate-slide-in flex items-center gap-3 w-80 md:w-96 max-w-[90vw] cursor-pointer transition-all duration-300`;
+    toast.className = `fixed bottom-24 right-4 ${conf.bg} text-white px-4 py-3 rounded-lg shadow-lg z-[1000] animate-slide-in flex items-center gap-3 w-80 md:w-96 max-w-[90vw] cursor-pointer transition-all duration-300`;
 
     // 判断文字长度，长文字启用滚动显示
     // 假设中文占2字符宽，英文1字符。w-96大约容纳25-30个汉字。
