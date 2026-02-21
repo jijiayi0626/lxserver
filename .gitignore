@@ -68,3 +68,8 @@ lx-music-desktop-master
 debug.txt
 
 cache
+
+# VitePress
+docs/.vitepress/dist
+docs/.vitepress/cache
+docs/node_modules
