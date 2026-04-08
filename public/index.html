@@ -357,35 +357,56 @@
                 <!-- 用户管理视图 -->
                 <div id="view-users" class="view">
                     <div class="view-header">
-                        <button id="add-user-btn" class="btn-primary">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                style="width:16px;height:16px;">
-                                <line x1="12" y1="5" x2="12" y2="19" />
-                                <line x1="5" y1="12" x2="19" y2="12" />
-                            </svg>
-                            <span>添加用户</span>
-                        </button>
-                        <button id="batch-delete-users-btn" class="btn-danger"
-                            style="display: none; margin-left: 10px;">
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
-                                stroke-width="2">
-                                <polyline points="3 6 5 6 21 6" />
-                                <path
-                                    d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                            </svg>
-                            批量删除 (<span id="user-selected-count">0</span>)
-                        </button>
-                    </div>
-                    <div class="users-table-header glass" style="border-radius:12px 12px 0 0; margin-bottom:0;">
-                        <div class="col-checkbox">
-                            <input type="checkbox" id="select-all-users">
+                        <div class="header-main-actions">
+                            <button id="add-user-btn" class="btn-primary">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    style="width:18px;height:18px;">
+                                    <line x1="12" y1="5" x2="12" y2="19" />
+                                    <line x1="5" y1="12" x2="19" y2="12" />
+                                </svg>
+                                <span>添加用户</span>
+                            </button>
+                            <div class="search-box">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="11" cy="11" r="8" />
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                                </svg>
+                                <input type="text" id="user-search-input" placeholder="输入用户名搜索..."
+                                    oninput="app.filterUsers()">
+                            </div>
                         </div>
-                        <div class="col-name">用户名</div>
-                        <div class="col-password">密码</div>
-                        <div class="col-status">状态</div>
-                        <div class="col-actions">操作</div>
+                        <div class="header-side-actions">
+                            <button id="refresh-users-btn" class="btn-secondary" title="刷新用户列表">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    style="width:16px;height:16px;">
+                                    <polyline points="23 4 23 10 17 10" />
+                                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                                </svg>
+                                <span>刷新</span>
+                            </button>
+                            <button id="batch-delete-users-btn" class="btn-danger" style="display: none;">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <polyline points="3 6 5 6 21 6" />
+                                    <path
+                                        d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                </svg>
+                                批量删除 (<span id="user-selected-count">0</span>)
+                            </button>
+                        </div>
                     </div>
-                    <div id="users-list" class="users-table-body"></div>
+                    <div class="users-list-wrapper">
+                        <div class="users-table-header">
+                            <div class="col-checkbox">
+                                <input type="checkbox" id="select-all-users">
+                            </div>
+                            <div class="col-name">用户名</div>
+                            <div class="col-password">密码</div>
+                            <div class="col-status">状态</div>
+                            <div class="col-actions">操作</div>
+                        </div>
+                        <div id="users-list" class="users-table-body"></div>
+                    </div>
                 </div>
 
 
@@ -689,8 +710,7 @@
                         <div class="webdav-group-label">☁️ 云端操作</div>
                         <div class="sync-actions-grid">
                             <button id="test-webdav-btn" class="action-card glass">
-                                <div class="action-card-icon"
-                                    style="background: linear-gradient(135deg, #10b981, #059669);">
+                                <div class="action-card-icon icon-emerald">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <circle cx="12" cy="12" r="10" />
                                         <polyline points="9 12 12 15 16 10" />
@@ -700,8 +720,7 @@
                                 <p>验证 WebDAV 配置</p>
                             </button>
                             <button id="backup-webdav-btn" class="action-card glass">
-                                <div class="action-card-icon"
-                                    style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+                                <div class="action-card-icon icon-blue">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                                         <polyline points="7 10 12 15 17 10" />
@@ -712,8 +731,7 @@
                                 <p>创建全量 ZIP 备份</p>
                             </button>
                             <button id="restore-webdav-btn" class="action-card glass">
-                                <div class="action-card-icon"
-                                    style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                                <div class="action-card-icon icon-amber">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                                         <polyline points="17 8 12 3 7 8" />
@@ -724,8 +742,7 @@
                                 <p>下载并恢复数据</p>
                             </button>
                             <button id="sync-files-btn" class="action-card glass">
-                                <div class="action-card-icon"
-                                    style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                                <div class="action-card-icon icon-purple">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <polyline points="23 4 23 10 17 10" />
                                         <polyline points="1 20 1 14 7 14" />
@@ -742,8 +759,7 @@
                         <div class="webdav-group-label" style="margin-top: 1.5rem;">💾 本地备份</div>
                         <div class="sync-actions-grid">
                             <button id="backup-local-btn" class="action-card glass border-emerald">
-                                <div class="action-card-icon"
-                                    style="background: linear-gradient(135deg, #10b981, #059669);">
+                                <div class="action-card-icon icon-emerald">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                                         <polyline points="7 10 12 15 17 10" />
@@ -754,8 +770,7 @@
                                 <p>打包并下载 ZIP 到本地</p>
                             </button>
                             <button id="restore-local-btn" class="action-card glass border-amber">
-                                <div class="action-card-icon"
-                                    style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                                <div class="action-card-icon icon-amber">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                                         <polyline points="17 8 12 3 7 8" />

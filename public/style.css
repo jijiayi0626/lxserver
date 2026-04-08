@@ -108,12 +108,7 @@ body {
     transition: all 0.3s ease;
 }
 
-.login-box input:focus {
-    outline: none;
-    border-color: var(--accent-primary);
-    background: rgba(255, 255, 255, 0.08);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
+/* .login-box input focus consolidated with form-input:focus below */
 
 .btn-primary {
     width: 100%;
@@ -658,27 +653,10 @@ body {
     padding: 1.5rem;
 }
 
-.playlist-item {
-    padding: 1rem;
-    border-bottom: 1px solid var(--glass-border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
+/* .playlist-item styles removed as they are unused */
 
-.playlist-item:last-child {
-    border-bottom: none;
-}
+/* .playlist-name / .playlist-count 已统一移至下方的歌单卡片区块 */
 
-.playlist-name {
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.playlist-count {
-    color: var(--text-secondary);
-    font-size: 0.875rem;
-}
 
 /* .config-form 已移除（HTML class 已改为 config-panels-layout） */
 
@@ -1387,22 +1365,36 @@ select.form-input option:checked {
     background: rgba(255, 255, 255, 0.02);
 }
 
-/* 彩色图标背景 */
+/* 通用颜色图标变体 - 移除背景，仅保留颜色 */
+.icon-emerald { color: var(--accent-success) !important; background: transparent !important; border: none !important; box-shadow: none !important; }
+.icon-blue { color: var(--accent-primary) !important; background: transparent !important; border: none !important; box-shadow: none !important; }
+.icon-amber { color: var(--accent-warning) !important; background: transparent !important; border: none !important; box-shadow: none !important; }
+.icon-purple { color: var(--accent-secondary) !important; background: transparent !important; border: none !important; box-shadow: none !important; }
+.icon-red { color: var(--accent-error) !important; background: transparent !important; border: none !important; box-shadow: none !important; }
+
+/* 彩色图标背景 - WebDAV 卡片专用 (当前设置为无背景模式) */
 .action-card-icon {
-    width: 56px;
-    height: 56px;
-    border-radius: 16px;
+    width: 64px;
+    height: 64px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 0.25rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    margin-bottom: 0.5rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: transparent;
+    border: none;
 }
 
 .action-card-icon svg {
-    width: 26px;
-    height: 26px;
-    color: white;
+    width: 32px; /* 稍微放大图标 */
+    height: 32px;
+    color: inherit;
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.1));
+}
+
+.action-card:hover .action-card-icon {
+    transform: scale(1.2); /* 悬停时图标放大 */
+    filter: drop-shadow(0 0 12px currentColor); /* 发光效果 */
 }
 
 /* WebDAV 分组标签 */
@@ -1463,16 +1455,7 @@ select.form-input option:checked {
     transition: width 0.3s ease;
 }
 
-/* 用户表格头 glass 样式覆盖 */
-.users-table-header.glass {
-    background: rgba(59, 130, 246, 0.06);
-    border-bottom: none;
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--text-secondary);
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-}
+/* .users-table-header override removed to use unified style below */
 
 .border-emerald {
     border: 1px solid rgba(16, 185, 129, 0.3) !important;
@@ -1890,18 +1873,28 @@ select.form-input option:checked {
 
 .playlist-meta {
     display: flex;
+    justify-content: space-between;
+    width: 100%;
     gap: 1rem;
     font-size: 0.875rem;
     color: var(--text-secondary);
+    min-width: 0;
 }
 
 .playlist-id {
     font-family: monospace;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
 }
 
 .playlist-count {
     color: var(--accent-primary);
     font-weight: 500;
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 
 .playlist-card-actions {
@@ -1993,116 +1986,7 @@ select.form-input option:checked {
 }
 
 /* =============== 歌曲表格 =============== */
-.songs-table {
-    background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
-    border-radius: 12px;
-    overflow: hidden;
-}
-
-/* songs-table-header / song-row 主定义在下方「歌曲列表 UI 美化」区块 */
-
-.song-row:hover {
-    background: rgba(255, 255, 255, 0.03);
-}
-
-.song-row:last-child {
-    border-bottom: none;
-}
-
-.song-col-index {
-    color: var(--text-muted);
-    font-size: 0.875rem;
-    text-align: center;
-}
-
-.song-col-name {
-    font-weight: 500;
-    color: var(--text-primary);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.song-col-artist,
-.song-col-album,
-.song-col-source {
-    color: var(--text-secondary);
-    font-size: 0.875rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.song-col-actions {
-    display: flex;
-    justify-content: center;
-}
-
-.btn-delete-song {
-    width: 32px;
-    height: 32px;
-    border-radius: 6px;
-    border: none;
-    background: rgba(239, 68, 68, 0.1);
-    color: var(--accent-error);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-}
-
-.btn-delete-song:hover {
-    background: rgba(239, 68, 68, 0.2);
-}
-
-.btn-delete-song svg {
-    width: 16px;
-    height: 16px;
-}
-
-/* 响应式 */
-@media (max-width: 1024px) {
-
-    .songs-table-header,
-    .song-row {
-        grid-template-columns: 40px 2fr 1fr 80px;
-    }
-
-    .song-col-album,
-    .song-col-source {
-        display: none;
-    }
-}
-
-@media (max-width: 768px) {
-
-    .songs-table-header,
-    .song-row {
-        grid-template-columns: 1fr 60px;
-        grid-template-areas:
-            "name actions"
-            "meta meta";
-    }
-
-    .song-col-index {
-        display: none;
-    }
-
-    .song-col-name {
-        grid-area: name;
-    }
-
-    .song-col-actions {
-        grid-area: actions;
-    }
-
-    .song-col-artist {
-        grid-area: meta;
-        grid-column: 1 / -1;
-    }
-}
+/*songs-table 相关样式已统一移至下方的「歌曲列表 UI 美化」区块 */
 
 /* =============== 可点击的统计卡片 =============== */
 .data-stat-card.clickable {
@@ -2235,67 +2119,7 @@ select.form-input option:checked {
 /* 歌曲表格列布局统一由下方「歌曲列表 UI 美化」区块管理 */
 
 /* 响应式调整 */
-@media (max-width: 1024px) {
-
-    .songs-table-header,
-    .song-row {
-        grid-template-columns: 40px 40px 2fr 1fr 80px;
-    }
-
-    .batch-actions {
-        flex-direction: column;
-        gap: 1rem;
-        align-items: stretch;
-    }
-
-    .batch-select-btns {
-        justify-content: center;
-    }
-}
-
-@media (max-width: 768px) {
-
-    .songs-table-header,
-    .song-row {
-        grid-template-columns: 32px 1fr 60px;
-        grid-template-areas:
-            "checkbox name actions"
-            "meta meta meta";
-    }
-
-    .song-col-index,
-    .song-col-album,
-    .song-col-source {
-        display: none;
-    }
-
-    .song-col-checkbox {
-        grid-area: checkbox;
-    }
-
-    .song-col-name {
-        grid-area: name;
-    }
-
-    .song-col-actions {
-        grid-area: actions;
-    }
-
-    .song-col-artist {
-        grid-area: meta;
-        grid-column: 1 / -1;
-        padding-left: 2.5rem;
-    }
-
-    .batch-select-btns {
-        flex-wrap: wrap;
-    }
-
-    .btn-batch {
-        flex: 1;
-        min-width: 80px;
-    }
-}
+/* songs-table checkbox 布局已统一 */
 
 /* =============== 搜索排序栏 =============== */
 .search-sort-bar {
@@ -2309,6 +2133,8 @@ select.form-input option:checked {
     flex: 1;
     position: relative;
     max-width: 400px;
+    min-width: 250px;
+    transition: all 0.3s ease;
 }
 
 .search-box input {
@@ -2368,44 +2194,7 @@ select.form-input option:checked {
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-/* =============== 优化歌曲表格列宽 =============== */
-/* 默认布局 - 没有复选框的视图 */
-.songs-table-header:not(:has(.song-col-checkbox)),
-.song-row:not(:has(.song-col-checkbox)) {
-    grid-template-columns: 50px minmax(180px, 2.5fr) minmax(120px, 1.5fr) minmax(120px, 1.5fr) 100px;
-}
-
-/* 查看所有歌曲时的布局（包含所属列表） */
-.songs-table-header:has(.song-col-playlist),
-.song-row:has(.song-col-playlist) {
-    grid-template-columns: 50px minmax(160px, 2fr) minmax(100px, 1.2fr) minmax(100px, 1.2fr) 80px minmax(100px, 1.2fr);
-}
-
-/* 所属列表列样式 */
-.song-col-playlist {
-    color: var(--text-secondary);
-    font-size: 0.875rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-/* 优化文本截断显示 */
-.song-col-name,
-.song-col-artist,
-.song-col-album,
-.song-col-playlist {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-/* 添加 title 属性提示完整内容 */
-.song-col-name[title],
-.song-col-artist[title],
-.song-col-album[title] {
-    cursor: help;
-}
+/* 文本截断已统一 */
 
 /* 响应式调整 - 搜索排序栏 */
 @media (max-width: 768px) {
@@ -2483,16 +2272,67 @@ select.form-input option:checked {
 
 /* =============== 用户管理表格样式 =============== */
 
-/* 定义表格网格布局：复选框 | 用户名 | 密码 | 状态 | 操作 */
-.users-table-header,
+.view-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding: 0.5rem 0.25rem;
+}
+
+.header-main-actions {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    flex: 1;
+}
+
+.header-side-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* 用户列表容器美化 */
+#view-users .users-list-wrapper {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: var(--shadow-xl);
+}
+
+.users-table-header {
+    display: grid;
+    grid-template-columns: 80px 2fr 1.5fr 140px 100px;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid var(--glass-border);
+    font-weight: 700;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
 .user-row {
     display: grid;
-    /* 40px(复选框) 1fr(用户名) 1fr(密码) 100px(状态) 120px(操作) */
-    grid-template-columns: 40px 1fr 1fr 100px 120px;
-    gap: 1rem;
+    grid-template-columns: 80px 2fr 1.5fr 140px 100px;
+    gap: 1.5rem;
+    padding: 1.25rem 1.5rem;
     align-items: center;
-    padding: 1rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     border-bottom: 1px solid var(--glass-border);
+}
+
+.user-row:hover {
+    background: rgba(255, 255, 255, 0.04);
+    transform: scale(1.002);
+}
+
+.user-row:last-child {
+    border-bottom: none;
 }
 
 /* 复选框列居中 */
@@ -2502,9 +2342,54 @@ select.form-input option:checked {
     align-items: center;
 }
 
+/* 状态徽章 */
+.status-badge {
+    padding: 0.4rem 0.8rem;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.status-badge.active {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--accent-success);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.status-badge.active::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: var(--accent-success);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--accent-success);
+    animation: pulse-dot-active 2s infinite;
+}
+
+@keyframes pulse-dot-active {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.5);
+        opacity: 0.6;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
 /* 密码列样式 */
 .col-password {
-    font-family: monospace;
+    font-family: inherit;
     color: var(--text-secondary);
     display: flex;
     align-items: center;
@@ -2514,17 +2399,21 @@ select.form-input option:checked {
 /* 密码掩码样式 */
 .password-text {
     min-width: 60px;
+    font-family: 'JetBrains Mono', 'Monaco', monospace;
+    font-size: 0.9rem;
+    letter-spacing: 0.1em;
 }
 
-/* 图标按钮样式 (用于显示密码/编辑密码) */
+/* 图标按钮样式 */
 .btn-icon {
-    background: none;
-    border: none;
+    width: 32px;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
     color: var(--text-secondary);
     cursor: pointer;
-    padding: 4px;
-    border-radius: 4px;
-    transition: all 0.2s;
+    border-radius: 8px;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2532,7 +2421,9 @@ select.form-input option:checked {
 
 .btn-icon:hover {
     color: var(--accent-primary);
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(59, 130, 246, 0.1);
+    border-color: rgba(59, 130, 246, 0.2);
+    transform: translateY(-1px);
 }
 
 /* 批量删除按钮样式已在 index.html 中定义为 btn-danger，这里确保样式存在 */
@@ -2564,24 +2455,14 @@ input:-webkit-autofill:active {
     /* 确保光标颜色可见 */
 }
 
-/* 确保普通输入框背景为深色 */
-.form-input,
-.login-box input {
-    background: rgba(255, 255, 255, 0.05);
-    color: #e2e8f0;
-    border: 1px solid var(--glass-border);
-    width: 100%;
-    /* 确保宽度填满 */
-    box-sizing: border-box;
-    /* 包含 padding 和 border */
-}
-
+/* Input focus effect consolidated */
 .form-input:focus,
 .login-box input:focus {
     background: rgba(255, 255, 255, 0.1);
     color: #fff;
     outline: none;
     border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 /* =============== 用户列表布局修复 =============== */
@@ -2594,16 +2475,7 @@ input:-webkit-autofill:active {
 }
 
 /* 确保每一行占满宽度 */
-.user-row {
-    width: 100%;
-    /* 保持之前的 grid 定义 */
-    display: grid;
-    grid-template-columns: 40px 1fr 1fr 100px 120px;
-    gap: 1rem;
-    align-items: center;
-    padding: 1rem;
-    border-bottom: 1px solid var(--glass-border);
-}
+/* .user-row consolidated above in '用户管理表格样式' section */
 
 /* 移动端适配用户列表 */
 @media (max-width: 768px) {
@@ -2818,31 +2690,85 @@ input:-webkit-autofill:active {
 /* =============== 歌曲列表 UI 美化 =============== */
 
 /* 调整歌曲表格的列宽 */
+/* 基本 grid 布局 - 适配不同列数 */
+/* 5 列布局 (Index, Name, Artist, Album, Actions/Source/Playlist) */
 .songs-table-header,
 .song-row {
-    /* 默认 6 列 */
-    /* 修正：index, name, artist, album, empty/other, actions */
-    /* 实际上 viewAllSongs 是: index, name, artist, album, playlist(source) */
-    /* viewSystemList 是: index, name, artist, album, actions */
-
-    /* 统一一下: */
-    /* viewAllSongs (5 cols): index, name, artist, album, playlist */
-    /* viewSystemList (5 cols): index, name, artist, album, actions */
-    /* viewPlaylistDetails (6 cols w/o source): checkbox, index, name, artist, album, actions */
-
-    /* 让默认 grid 适配 5 列结构 (无 checkbox) */
-    grid-template-columns: 50px minmax(250px, 2fr) minmax(120px, 1fr) minmax(120px, 1fr) 120px;
+    display: grid;
+    grid-template-columns: 50px minmax(200px, 2.5fr) minmax(120px, 1.2fr) minmax(120px, 1.2fr) 100px;
     gap: 1rem;
     align-items: center;
-    padding: 0.75rem 1rem;
+    padding: 0.75rem 1.5rem;
     border-bottom: 1px solid var(--glass-border);
     transition: background 0.2s ease;
 }
 
-/* 带复选框的特殊布局 (6列) */
+/* 6 列布局 (Index, Name, Artist, Album, Source/Playlist, Actions) */
+.songs-table-header:has(.song-col-source),
+.song-row:has(.song-col-source) {
+    grid-template-columns: 50px minmax(200px, 2.2fr) minmax(100px, 1fr) minmax(100px, 1fr) 100px 100px;
+}
+
+/* 带复选框的布局 (Checkbox + 5/6列) */
 .songs-table-header.with-checkbox,
 .song-row.with-checkbox {
-    grid-template-columns: 40px 50px minmax(250px, 2fr) minmax(120px, 1fr) minmax(120px, 1fr) 120px;
+    /* 假设是 checkbox + 5 列 */
+    grid-template-columns: 40px 50px minmax(200px, 2.5fr) minmax(120px, 1.2fr) minmax(120px, 1.2fr) 100px;
+}
+
+/* 特殊：查看所有歌曲时的 5 列布局 (包含所属列表) */
+.songs-table-header:has(.song-col-playlist),
+.song-row:has(.song-col-playlist) {
+    grid-template-columns: 50px minmax(160px, 2fr) minmax(100px, 1.2fr) minmax(100px, 1.2fr) 150px;
+}
+
+.song-row:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.song-col-index {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    text-align: center;
+}
+
+.song-col-artist,
+.song-col-album,
+.song-col-playlist,
+.song-col-source {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.song-col-actions {
+    display: flex;
+    justify-content: center;
+}
+
+.btn-delete-song {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: none;
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--accent-error);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.btn-delete-song:hover {
+    background: rgba(239, 68, 68, 0.2);
+}
+
+.btn-delete-song svg {
+    width: 16px;
+    height: 16px;
 }
 
 .song-col-name {
@@ -3285,46 +3211,74 @@ input:-webkit-autofill:active {
         margin-top: 0.5rem;
     }
 
-    /* Songs List Mobile Adaptation */
-    .songs-table-header {
-        display: none;
+    /* Songs List Mobile Adaptation (Tablet/Phone) */
+    @media (max-width: 1024px) {
+
+        .songs-table-header,
+        .song-row {
+            grid-template-columns: 50px 2fr 1fr 100px;
+        }
+
+        .song-col-album,
+        .song-col-playlist {
+            display: none;
+        }
+
+        .songs-table-header.with-checkbox,
+        .song-row.with-checkbox {
+            grid-template-columns: 40px 50px 2fr 1fr 100px;
+        }
     }
 
-    .song-row,
-    .song-row.with-checkbox {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.75rem;
-        padding: 1rem;
-        height: auto;
-        position: relative;
-    }
+    @media (max-width: 768px) {
+        .songs-table-header {
+            display: none;
+        }
 
-    .song-row.with-checkbox .col-checkbox,
-    .song-row input[type="checkbox"] {
-        position: absolute;
-        top: 1rem;
-        right: 1rem;
-    }
+        .song-row,
+        .song-row.with-checkbox {
+            display: grid;
+            grid-template-columns: 32px 1fr 60px;
+            grid-template-areas:
+                "checkbox name actions"
+                "meta meta meta";
+            gap: 0.5rem;
+            padding: 1rem;
+            align-items: center;
+        }
 
-    .song-col-name {
-        width: 100%;
-    }
+        .song-row .song-col-checkbox {
+            grid-area: checkbox;
+        }
 
-    .song-row .col-actions {
-        width: 100%;
-        display: flex;
-        justify-content: flex-end;
-        padding-top: 0.5rem;
-        border-top: 1px solid var(--glass-border);
-        margin-top: 0.25rem;
+        .song-row .song-col-name {
+            grid-area: name;
+            width: 100%;
+        }
+
+        .song-row .song-col-actions {
+            grid-area: actions;
+            justify-content: flex-end;
+            border: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .song-row .song-col-artist {
+            grid-area: meta;
+            padding-left: 2.5rem;
+            opacity: 0.8;
+        }
+
+        .song-col-index,
+        .song-col-album,
+        .song-col-playlist {
+            display: none;
+        }
     }
 
     /* Playlists Adaptation */
-    .playlist-item {
-        padding: 0.75rem;
-    }
+    /* Playlists Adaptation consolidated */
 
     /* .config-form 已无效 */
 

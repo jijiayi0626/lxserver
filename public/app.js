@@ -63,6 +63,16 @@ class App {
 
         // 用户管理
         document.getElementById('add-user-btn')?.addEventListener('click', () => this.showAddUserModal());
+        document.getElementById('refresh-users-btn')?.addEventListener('click', async () => {
+            try {
+                await this.request('/api/admin/reload', { method: 'POST' });
+                this.loadUsers();
+                this.loadDashboard();
+                showSuccess('重载数据成功');
+            } catch (err) {
+                showError('重载数据失败: ' + err.message);
+            }
+        });
         // 新增：批量删除和全选
         document.getElementById('batch-delete-users-btn')?.addEventListener('click', () => this.batchDeleteUsers());
         document.getElementById('select-all-users')?.addEventListener('change', (e) => this.toggleAllUsers(e.target.checked));
@@ -538,6 +548,20 @@ class App {
         const selectAll = document.getElementById('select-all-users');
         if (selectAll) selectAll.checked = false;
         this.updateUserBatchBtn();
+    }
+
+    filterUsers() {
+        const query = document.getElementById('user-search-input').value.toLowerCase().trim();
+        const rows = document.querySelectorAll('#users-list .user-row');
+
+        rows.forEach(row => {
+            const userName = row.querySelector('.col-name').textContent.toLowerCase();
+            if (userName.includes(query)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
     }
 
     showAddUserModal() {

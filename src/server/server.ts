@@ -489,6 +489,75 @@ const saveUsers = () => {
   }
 }
 
+/** [新增] 服务器内部热重载数据 */
+const reloadServerData = async () => {
+  startupLog.info('Hot-reloading server data (users and config)...')
+
+  // 1. 重新加载 config.js (必须先加载基础配置)
+  const configPath = process.env.CONFIG_PATH || path.join(process.cwd(), 'config.js')
+  if (fs.existsSync(configPath)) {
+    try {
+      delete require.cache[require.resolve(configPath)]
+      const rootConfig = require(configPath)
+
+      // 合并除 users 以外的配置项
+      for (const key of Object.keys(rootConfig)) {
+        if (key !== 'users') {
+          (global.lx.config as any)[key] = rootConfig[key]
+        }
+      }
+
+      // 如果有 WebDAV 同步实例，手动同步其配置
+      if (global.lx.webdavSync) {
+        global.lx.webdavSync.updateConfig({
+          url: global.lx.config['webdav.url'],
+          username: global.lx.config['webdav.username'],
+          password: global.lx.config['webdav.password'],
+          interval: global.lx.config['sync.interval'],
+        })
+      }
+      startupLog.info('Config.js re-loaded and merged.')
+    } catch (err: any) {
+      startupLog.error('Failed to reload config.js:', err.message)
+    }
+  }
+
+  // 2. 重新加载 users.json (users.json 权重更高，会覆盖 config.js 中的 users)
+  const usersJsonPath = path.join(global.lx.dataPath, 'users.json')
+  if (fs.existsSync(usersJsonPath)) {
+    try {
+      const usersRaw = fs.readFileSync(usersJsonPath, 'utf-8')
+      const users = JSON.parse(usersRaw)
+      if (Array.isArray(users)) {
+        global.lx.config.users = users.map(u => ({
+          ...u,
+          dataPath: path.join(global.lx.userPath, getUserDirname(u.name))
+        }))
+
+        // 确保新加载的所有用户目录存在
+        for (const user of global.lx.config.users) {
+          if (!fs.existsSync(user.dataPath)) {
+            fs.mkdirSync(user.dataPath, { recursive: true })
+          }
+        }
+        startupLog.info(`Reloaded ${global.lx.config.users.length} users from users.json`)
+      }
+    } catch (err: any) {
+      startupLog.error('Failed to reload users.json:', err.message)
+    }
+  }
+
+  // 3. 重新初始化 User APIs (解决脚本源实时生效问题)
+  try {
+    await initUserApis()
+    startupLog.info('User APIs re-initialized.')
+  } catch (err: any) {
+    startupLog.error('Failed to re-init user APIs:', err.message)
+  }
+
+  return true
+}
+
 const checkAndCreateDir = (p: string) => {
   try {
     if (!fs.existsSync(p)) {
@@ -1234,6 +1303,35 @@ const handleStartServer = async (port = 9527, ip = '127.0.0.1') => await new Pro
 
         try {
           const body = await readBody(req)
+          let finalData = body
+
+          // [核心兼容性修复] 检测是否为落雪音乐离线备份格式 (playList_v2)
+          try {
+            const jsonData = JSON.parse(body)
+            if (jsonData && jsonData.type === 'playList_v2' && Array.isArray(jsonData.data)) {
+              startupLog.info(`[Snapshot] Detected LX Music backup format for user ${verifiedUser}, converting back to internal format...`)
+
+              // 寻找默认列表
+              const defaultList = jsonData.data.find((l: any) => l.id === 'default')?.list || []
+              // 寻找收藏列表
+              const loveList = jsonData.data.find((l: any) => l.id === 'love')?.list || []
+              // 其他所有列表均作为用户列表
+              const userList = jsonData.data.filter((l: any) => l.id !== 'default' && l.id !== 'love')
+
+              // 拼装为服务器内部快照格式
+              const internalFormat = {
+                defaultList,
+                loveList,
+                userList
+              }
+
+              // 压缩为单行 JSON 以节省磁盘空间并保持与原生快照一致的大小
+              finalData = JSON.stringify(internalFormat)
+              startupLog.info(`[Snapshot] Conversion complete for user ${verifiedUser}.`)
+            }
+          } catch (parseErr) {
+            // 解析失败说明不是标准的 JSON 格式或已经是原始快照，保持原样即可
+          }
 
           // 处理文件名：如果以 snapshot_ 开头，则去掉（因为 saveSnapshotWithTime 会自动加）
           // 如果不以 snapshot_ 开头，则保持原样（saveSnapshotWithTime 会自动加 snapshot_ 前缀）
@@ -1243,7 +1341,7 @@ const handleStartServer = async (port = 9527, ip = '127.0.0.1') => await new Pro
           }
 
           // 调用 ListManage 中的 saveSnapshotWithTime 方法
-          await userSpace.listManage.saveSnapshotWithTime(name, body, time)
+          await userSpace.listManage.saveSnapshotWithTime(name, finalData, time)
 
           res.writeHead(200, { 'Content-Type': 'application/json' })
           res.end(JSON.stringify({ success: true }))
@@ -3795,7 +3893,10 @@ const handleStartServer = async (port = 9527, ip = '127.0.0.1') => await new Pro
           return
         }
 
-        void webdavSync.restoreFromRemote().then((success: boolean) => {
+        void webdavSync.restoreFromRemote().then(async (success: boolean) => {
+          if (success) {
+            await reloadServerData()
+          }
           res.writeHead(200, { 'Content-Type': 'application/json' })
           res.end(JSON.stringify({ success }))
         })
@@ -3914,13 +4015,33 @@ const handleStartServer = async (port = 9527, ip = '127.0.0.1') => await new Pro
             // 删除临时上传的文件
             if (fs.existsSync(file.filepath)) fs.unlinkSync(file.filepath)
 
+            // [新增] 还原后自动触发重载
+            await reloadServerData()
+
             res.writeHead(200, { 'Content-Type': 'application/json' })
-            res.end(JSON.stringify({ success: true, message: 'Restore from local ZIP success' }))
+            res.end(JSON.stringify({ success: true, message: 'Restore from local ZIP success and reloaded' }))
           } catch (restoreErr: any) {
             console.error('Local Restore Error:', restoreErr)
             res.writeHead(500); res.end('Restore failed: ' + restoreErr.message)
           }
         })
+        return
+      }
+
+      // [新增] 管理重载 API
+      if (pathname === '/api/admin/reload' && req.method === 'POST') {
+        const auth = req.headers['x-frontend-auth']
+        if (auth !== global.lx.config['frontend.password']) {
+          res.writeHead(401); res.end('Unauthorized'); return
+        }
+
+        try {
+          await reloadServerData()
+          res.writeHead(200, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ success: true, message: 'Server data reloaded from disk' }))
+        } catch (err: any) {
+          res.writeHead(500); res.end(err.message)
+        }
         return
       }
 

@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="zh-CN">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Sonic Curator | 系统配置</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-container": "#000000",
+                        "inverse-on-surface": "#4d556b",
+                        "secondary-fixed": "#cdcdff",
+                        "surface-container-lowest": "#000000",
+                        "primary-container": "#14f167",
+                        "error-dim": "#d7383b",
+                        "primary-fixed": "#31fd71",
+                        "background": "#060e20",
+                        "tertiary-dim": "#9c48ea",
+                        "surface-container": "#0f1930",
+                        "primary": "#46ff78",
+                        "on-secondary-fixed": "#160bae",
+                        "on-primary-fixed": "#004618",
+                        "error-container": "#9f0519",
+                        "surface-container-low": "#091328",
+                        "on-tertiary": "#33005b",
+                        "on-primary-container": "#00531e",
+                        "surface-dim": "#060e20",
+                        "outline": "#6d758c",
+                        "surface-container-high": "#141f38",
+                        "outline-variant": "#40485d",
+                        "on-tertiary-fixed": "#270048",
+                        "secondary-dim": "#6063ee",
+                        "on-primary": "#005d23",
+                        "surface-tint": "#46ff78",
+                        "on-secondary-fixed-variant": "#3a3ac8",
+                        "tertiary-container": "#af5cfe",
+                        "surface-variant": "#192540",
+                        "on-surface-variant": "#a3aac4",
+                        "secondary-container": "#2f2ebe",
+                        "surface": "#060e20",
+                        "on-background": "#dee5ff",
+                        "on-secondary-container": "#ccccff",
+                        "primary-fixed-dim": "#06ee65",
+                        "tertiary-fixed": "#ce9bff",
+                        "inverse-surface": "#faf8ff",
+                        "secondary-fixed-dim": "#bdbeff",
+                        "inverse-primary": "#006e2a",
+                        "on-tertiary-fixed-variant": "#560094",
+                        "tertiary-fixed-dim": "#c488ff",
+                        "primary-dim": "#06ee65",
+                        "on-primary-fixed-variant": "#006627",
+                        "secondary": "#9093ff",
+                        "error": "#ff716c",
+                        "on-error-container": "#ffa8a3",
+                        "surface-container-highest": "#192540",
+                        "on-secondary": "#080079",
+                        "on-surface": "#dee5ff",
+                        "on-error": "#490006",
+                        "tertiary": "#c180ff",
+                        "surface-bright": "#1f2b49"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .dark body {
+            background-color: #060e20;
+            color: #dee5ff;
+        }
+
+        body:not(.dark) {
+            background-color: #f0f2f5;
+            color: #1a1c1e;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .glass-panel {
+            backdrop-filter: blur(16px);
+        }
+
+        .dark .glass-panel {
+            background: rgba(25, 37, 64, 0.6);
+        }
+
+        body:not(.dark) .glass-panel {
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .sonic-shadow {
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(70, 255, 120, 0.05);
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-bottom: 1px solid #46ff78 !important;
+        }
+
+        /* Light mode overrides for component states */
+        body:not(.dark) .bg-surface-container {
+            background-color: #ffffff;
+            border-color: rgba(0, 0, 0, 0.05);
+        }
+
+        body:not(.dark) .bg-surface-container-low {
+            background-color: #f8fafc;
+        }
+
+        body:not(.dark) .bg-surface-container-lowest {
+            background-color: #f1f5f9;
+        }
+
+        body:not(.dark) .bg-surface-container-highest {
+            background-color: #e2e8f0;
+        }
+
+        body:not(.dark) .text-on-surface {
+            color: #1a1c1e;
+        }
+
+        body:not(.dark) .text-on-surface-variant {
+            color: #475569;
+        }
+
+        body:not(.dark) .text-secondary {
+            color: #475569;
+        }
+
+        body:not(.dark) .bg-primary-container\/10 {
+            background-color: rgba(20, 241, 103, 0.1);
+        }
+
+        body:not(.dark) .bg-secondary\/10 {
+            background-color: rgba(144, 147, 255, 0.1);
+        }
+
+        body:not(.dark) .bg-tertiary\/10 {
+            background-color: rgba(193, 128, 255, 0.1);
+        }
+
+        body:not(.dark) .bg-primary\/10 {
+            background-color: rgba(70, 255, 120, 0.1);
+        }
+
+        body:not(.dark) aside {
+            background-color: #ffffff;
+            border-color: #e2e8f0;
+        }
+
+        body:not(.dark) header {
+            background-color: rgba(248, 250, 252, 0.8);
+        }
+    </style>
+</head>
+
+<body class="flex min-h-screen overflow-x-hidden">
+    <aside
+        class="fixed left-0 top-0 h-full z-40 w-64 hidden lg:flex flex-col border-r border-[#40485d]/15 bg-[#091328] font-['Inter'] tracking-tight text-sm">
+        <div class="px-6 py-8">
+            <h1 class="text-xl font-bold tracking-tighter text-[#46ff78] uppercase">The Sonic Curator</h1>
+            <p class="text-[10px] text-secondary tracking-[0.2em] mt-1 opacity-70">音频管理系统</p>
+        </div>
+        <nav class="flex-1 px-4 space-y-1">
+            <div
+                class="flex items-center px-4 py-3 text-[#9093ff] hover:text-white transition-colors hover:bg-[#192540] hover:text-[#46ff78] rounded-xl cursor-pointer transition-all duration-200 ease-in-out group">
+                <span class="material-symbols-outlined mr-3">dashboard</span>
+                <span>仪表盘</span>
+            </div>
+            <div
+                class="flex items-center px-4 py-3 text-[#9093ff] hover:text-white transition-colors hover:bg-[#192540] hover:text-[#46ff78] rounded-xl cursor-pointer transition-all duration-200 ease-in-out">
+                <span class="material-symbols-outlined mr-3">group</span>
+                <span>用户管理</span>
+            </div>
+            <div
+                class="flex items-center px-4 py-3 text-[#9093ff] hover:text-white transition-colors hover:bg-[#192540] hover:text-[#46ff78] rounded-xl cursor-pointer transition-all duration-200 ease-in-out">
+                <span class="material-symbols-outlined mr-3">database</span>
+                <span>数据统计</span>
+            </div>
+            <div
+                class="flex items-center px-4 py-3 text-[#46ff78] font-bold border-r-2 border-[#46ff78] bg-[#0f1930] rounded-l-xl cursor-pointer transition-all duration-200 ease-in-out">
+                <span class="material-symbols-outlined mr-3">settings</span>
+                <span>系统配置</span>
+            </div>
+            <div
+                class="flex items-center px-4 py-3 text-[#9093ff] hover:text-white transition-colors hover:bg-[#192540] hover:text-[#46ff78] rounded-xl cursor-pointer transition-all duration-200 ease-in-out">
+                <span class="material-symbols-outlined mr-3">folder_shared</span>
+                <span>WebDAV</span>
+            </div>
+            <div
+                class="flex items-center px-4 py-3 text-[#9093ff] hover:text-white transition-colors hover:bg-[#192540] hover:text-[#46ff78] rounded-xl cursor-pointer transition-all duration-200 ease-in-out">
+                <span class="material-symbols-outlined mr-3">folder_open</span>
+                <span>文件管理</span>
+            </div>
+            <div
+                class="flex items-center px-4 py-3 text-[#9093ff] hover:text-white transition-colors hover:bg-[#192540] hover:text-[#46ff78] rounded-xl cursor-pointer transition-all duration-200 ease-in-out">
+                <span class="material-symbols-outlined mr-3">history</span>
+                <span>快照备份</span>
+            </div>
+            <div
+                class="flex items-center px-4 py-3 text-[#9093ff] hover:text-white transition-colors hover:bg-[#192540] hover:text-[#46ff78] rounded-xl cursor-pointer transition-all duration-200 ease-in-out">
+                <span class="material-symbols-outlined mr-3">terminal</span>
+                <span>日志记录</span>
+            </div>
+            <div
+                class="flex items-center px-4 py-3 text-[#9093ff] hover:text-white transition-colors hover:bg-[#192540] hover:text-[#46ff78] rounded-xl cursor-pointer transition-all duration-200 ease-in-out">
+                <span class="material-symbols-outlined mr-3">play_circle</span>
+                <span>网页播放器</span>
+            </div>
+            <div
+                class="flex items-center px-4 py-3 text-[#9093ff] hover:text-white transition-colors hover:bg-[#192540] hover:text-[#46ff78] rounded-xl cursor-pointer transition-all duration-200 ease-in-out">
+                <span class="material-symbols-outlined mr-3">info</span>
+                <span>关于我们</span>
+            </div>
+        </nav>
+        <div class="p-4 mt-auto">
+            <button
+                class="w-full bg-gradient-to-br from-primary to-primary-container text-on-primary-container font-bold py-3 rounded-xl flex items-center justify-center space-x-2 sonic-shadow transition-transform active:scale-95">
+                <span class="material-symbols-outlined text-lg">sync</span>
+                <span>同步操作</span>
+            </button>
+        </div>
+    </aside>
+    <main class="flex-1 lg:pl-64 min-h-screen relative pb-32">
+        <header
+            class="flex justify-between items-center w-full px-6 py-4 lg:pl-8 bg-[#060e20]/60 backdrop-blur-xl sticky top-0 z-30 shadow-[0_20px_40px_rgba(0,0,0,0.4)]">
+            <div class="flex flex-col">
+                <h2 class="text-2xl font-black text-[#46ff78] uppercase tracking-widest font-['Inter'] display-md">配置
+                </h2>
+                <span class="text-xs text-secondary/60">系统设置</span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div
+                    class="hidden md:flex items-center bg-surface-container rounded-full px-4 py-1.5 border border-outline-variant/10">
+                    <span class="material-symbols-outlined text-secondary text-sm mr-2">search</span>
+                    <input class="bg-transparent border-none focus:ring-0 text-sm w-48 text-on-surface"
+                        placeholder="搜索参数..." type="text" />
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button class="p-2 text-secondary hover:text-primary transition-colors"
+                        onclick="document.documentElement.classList.toggle('dark')">
+                        <span class="material-symbols-outlined">contrast</span>
+                    </button>
+                    <button class="p-2 text-secondary hover:text-primary transition-colors">
+                        <span class="material-symbols-outlined">refresh</span>
+                    </button>
+                    <div class="h-8 w-8 rounded-full overflow-hidden border border-primary/30">
+                        <img alt="管理员用户"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBvtvfkGlvodj_KWQBuKFmSdyd9FKcYeLB8ezE2vEAC0HBAEbo0XAbN13_40SxX3oHvw8YdNnVHmzk42zwcx6RhEZso4vCMrhvVrw1KvuCgeWeoFidHRsUpMcrExwpr5f6sNaWaARrXcmBhuQQ-7buYF1oxlt6bLD4sYxhSIcKxdcr7dIqHJtSR-hiXrZpb-2fc667QM-LrYtFWsVl6Cqt0zrHEj8cA7Y_uxW2GTDZKobr_UU32pywGYVTcT7NfiBjLbPuwaowp6Uo" />
+                    </div>
+                </div>
+            </div>
+        </header>
+        <section class="p-6 lg:p-10 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+            <div class="bg-surface-container rounded-xl p-6 md:col-span-2 border border-outline-variant/5">
+                <div class="flex items-center mb-8">
+                    <div class="p-3 bg-primary/10 rounded-xl mr-4">
+                        <span class="material-symbols-outlined text-primary">settings_input_component</span>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold tracking-tight text-on-surface">基础配置</h3>
+                        <p class="text-sm text-on-surface-variant">核心服务器行为与端口分配</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div class="flex flex-col">
+                        <label
+                            class="label-md uppercase tracking-widest font-bold text-[10px] text-secondary mb-2">服务器端口</label>
+                        <input
+                            class="bg-surface-container-lowest text-on-surface p-3 rounded-lg border-b border-transparent transition-all"
+                            type="text" value="3000" />
+                    </div>
+                    <div class="flex flex-col">
+                        <label
+                            class="label-md uppercase tracking-widest font-bold text-[10px] text-secondary mb-2">主机绑定</label>
+                        <select
+                            class="bg-surface-container-lowest text-on-surface p-3 rounded-lg border-b border-transparent transition-all appearance-none">
+                            <option>0.0.0.0 (全局)</option>
+                            <option>127.0.0.1 (本地)</option>
+                        </select>
+                    </div>
+                    <div
+                        class="flex items-center justify-between p-4 bg-surface-container-low rounded-xl border border-outline-variant/10">
+                        <div class="flex flex-col">
+                            <span class="text-sm font-semibold">启用 Gzip</span>
+                            <span class="text-[10px] text-secondary uppercase tracking-tight">压缩模式</span>
+                        </div>
+                        <div class="relative inline-flex items-center cursor-pointer">
+                            <input checked="" class="sr-only peer" type="checkbox" />
+                            <div
+                                class="w-11 h-6 bg-surface-container-highest rounded-full peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary">
+                            </div>
+                        </div>
+                    </div>
+                    <div
+                        class="flex items-center justify-between p-4 bg-surface-container-low rounded-xl border border-outline-variant/10">
+                        <div class="flex flex-col">
+                            <span class="text-sm font-semibold">自动更新</span>
+                            <span class="text-[10px] text-secondary uppercase tracking-tight">稳定频道</span>
+                        </div>
+                        <div class="relative inline-flex items-center cursor-pointer">
+                            <input class="sr-only peer" type="checkbox" />
+                            <div
+                                class="w-11 h-6 bg-surface-container-highest rounded-full peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-surface-container rounded-xl p-6 border border-outline-variant/5">
+                <div class="flex items-center mb-8">
+                    <div class="p-3 bg-secondary/10 rounded-xl mr-4">
+                        <span class="material-symbols-outlined text-secondary">lan</span>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold tracking-tight text-on-surface">代理配置</h3>
+                        <p class="text-sm text-on-surface-variant">外部网关路由设置</p>
+                    </div>
+                </div>
+                <div class="space-y-6">
+                    <div class="flex flex-col">
+                        <label
+                            class="label-md uppercase tracking-widest font-bold text-[10px] text-secondary mb-2">代理标头</label>
+                        <input
+                            class="bg-surface-container-lowest text-on-surface p-3 rounded-lg border-b border-transparent transition-all"
+                            type="text" value="X-Forwarded-For" />
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm font-medium">受信任代理</span>
+                        <span
+                            class="px-2 py-1 bg-surface-container-highest text-primary text-[10px] rounded border border-primary/20">4
+                            个激活</span>
+                    </div>
+                    <div class="space-y-2">
+                        <div
+                            class="p-2 bg-surface-container-lowest rounded text-xs text-on-surface-variant flex justify-between items-center">
+                            <span>192.168.1.1</span>
+                            <span class="material-symbols-outlined text-sm cursor-pointer hover:text-error">close</span>
+                        </div>
+                        <div
+                            class="p-2 bg-surface-container-lowest rounded text-xs text-on-surface-variant flex justify-between items-center">
+                            <span>10.0.0.1</span>
+                            <span class="material-symbols-outlined text-sm cursor-pointer hover:text-error">close</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-surface-container rounded-xl p-6 border border-outline-variant/5">
+                <div class="flex items-center mb-8">
+                    <div class="p-3 bg-tertiary/10 rounded-xl mr-4">
+                        <span class="material-symbols-outlined text-tertiary">web_asset</span>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold tracking-tight text-on-surface">前端配置</h3>
+                        <p class="text-sm text-on-surface-variant">视觉外观与资源设置</p>
+                    </div>
+                </div>
+                <div class="space-y-6">
+                    <div class="flex flex-col">
+                        <label
+                            class="label-md uppercase tracking-widest font-bold text-[10px] text-secondary mb-2">主题偏好</label>
+                        <select
+                            class="bg-surface-container-lowest text-on-surface p-3 rounded-lg border-b border-transparent appearance-none">
+                            <option>Sonic 深色 (默认)</option>
+                            <option>高对比度</option>
+                            <option>工作室亮色</option>
+                        </select>
+                    </div>
+                    <div
+                        class="flex items-center justify-between p-4 bg-surface-container-low rounded-xl border border-outline-variant/10">
+                        <div class="flex flex-col">
+                            <span class="text-sm font-semibold">波形渲染</span>
+                            <span class="text-[10px] text-secondary uppercase tracking-tight">实时视觉效果</span>
+                        </div>
+                        <div class="relative inline-flex items-center cursor-pointer">
+                            <input checked="" class="sr-only peer" type="checkbox" />
+                            <div
+                                class="w-11 h-6 bg-surface-container-highest rounded-full peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-surface-container rounded-xl p-6 border border-outline-variant/5">
+                <div class="flex items-center mb-8">
+                    <div class="p-3 bg-primary-container/10 rounded-xl mr-4">
+                        <span class="material-symbols-outlined text-primary-container">sync_alt</span>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold tracking-tight text-on-surface">WebDAV 同步</h3>
+                        <p class="text-sm text-on-surface-variant">远程存储集成</p>
+                    </div>
+                </div>
+                <div class="space-y-6">
+                    <div class="flex flex-col">
+                        <label class="label-md uppercase tracking-widest font-bold text-[10px] text-secondary mb-2">服务器
+                            URL</label>
+                        <input
+                            class="bg-surface-container-lowest text-on-surface p-3 rounded-lg border-b border-transparent"
+                            placeholder="https://cloud.sonic.curator/webdav" type="text" />
+                    </div>
+                    <div class="flex flex-col">
+                        <label
+                            class="label-md uppercase tracking-widest font-bold text-[10px] text-secondary mb-2">用户标识符</label>
+                        <input
+                            class="bg-surface-container-lowest text-on-surface p-3 rounded-lg border-b border-transparent"
+                            type="text" value="sonic_admin_01" />
+                    </div>
+                    <div class="flex flex-col">
+                        <label class="label-md uppercase tracking-widest font-bold text-[10px] text-secondary mb-2">密码 /
+                            令牌</label>
+                        <input
+                            class="bg-surface-container-lowest text-on-surface p-3 rounded-lg border-b border-transparent"
+                            type="password" value="••••••••••••" />
+                    </div>
+                </div>
+            </div>
+            <div
+                class="bg-surface-container rounded-xl p-6 md:col-span-2 lg:col-span-1 border border-outline-variant/5 relative overflow-hidden group">
+                <div class="flex items-center mb-8 relative z-10">
+                    <div class="p-3 bg-secondary-fixed/10 rounded-xl mr-4">
+                        <span class="material-symbols-outlined text-secondary-fixed">folder_special</span>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold tracking-tight text-on-surface">路径配置</h3>
+                        <p class="text-sm text-on-surface-variant">数据存储结构</p>
+                    </div>
+                </div>
+                <div class="space-y-6 relative z-10">
+                    <div class="flex flex-col">
+                        <label
+                            class="label-md uppercase tracking-widest font-bold text-[10px] text-secondary mb-2">音乐目录</label>
+                        <div class="flex items-center space-x-2">
+                            <input
+                                class="flex-1 bg-surface-container-lowest text-on-surface p-3 rounded-lg text-xs border-b border-transparent"
+                                type="text" value="/mnt/storage/media/music" />
+                            <button class="p-3 bg-surface-container-highest rounded-lg"><span
+                                    class="material-symbols-outlined text-sm">folder_open</span></button>
+                        </div>
+                    </div>
+                    <div class="flex flex-col">
+                        <label
+                            class="label-md uppercase tracking-widest font-bold text-[10px] text-secondary mb-2">缓存位置</label>
+                        <div class="flex items-center space-x-2">
+                            <input
+                                class="flex-1 bg-surface-container-lowest text-on-surface p-3 rounded-lg text-xs border-b border-transparent"
+                                type="text" value="/var/cache/sonic-curator" />
+                            <button class="p-3 bg-surface-container-highest rounded-lg"><span
+                                    class="material-symbols-outlined text-sm">folder_open</span></button>
+                        </div>
+                    </div>
+                    <div class="p-4 bg-primary/5 border border-primary/10 rounded-xl">
+                        <div class="flex items-start">
+                            <span class="material-symbols-outlined text-primary mr-3 text-lg">info</span>
+                            <p class="text-[11px] leading-relaxed text-on-surface-variant italic">
+                                更改存储路径将在下次重启时触发完整的数据库重新索引。</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="absolute -right-4 -bottom-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <span class="material-symbols-outlined text-9xl">folder_open</span>
+                </div>
+            </div>
+        </section>
+        <div
+            class="fixed bottom-0 left-0 lg:left-64 right-0 z-50 glass-panel p-6 border-t border-outline-variant/10 flex justify-between items-center sonic-shadow">
+            <div class="hidden md:flex items-center space-x-3">
+                <div class="h-2 w-2 rounded-full bg-primary animate-pulse"></div>
+                <span class="text-[10px] font-bold uppercase tracking-widest text-secondary">系统在线 • 延迟 48ms</span>
+            </div>
+            <div class="flex items-center space-x-4 w-full md:w-auto">
+                <button
+                    class="flex-1 md:flex-none px-8 py-3 rounded-full border border-outline-variant/30 text-secondary hover:bg-surface-container transition-colors text-sm font-bold tracking-tight">
+                    重新加载
+                </button>
+                <button
+                    class="flex-1 md:flex-none px-12 py-3 rounded-full bg-gradient-to-br from-primary to-primary-container text-on-primary-container font-black shadow-[0_0_20px_rgba(70,255,120,0.3)] hover:scale-105 transition-transform active:scale-95 text-sm uppercase tracking-widest">
+                    保存更改
+                </button>
+            </div>
+        </div>
+        <nav
+            class="lg:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-3 bg-[#192540]/80 backdrop-blur-lg rounded-t-2xl shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+            <div
+                class="flex flex-col items-center justify-center text-[#9093ff] p-2 hover:bg-[#192540] transition-transform active:scale-95">
+                <span class="material-symbols-outlined">home</span>
+                <span class="text-[8px] font-bold uppercase tracking-widest mt-1">主页</span>
+            </div>
+            <div
+                class="flex flex-col items-center justify-center text-[#9093ff] p-2 hover:bg-[#192540] transition-transform active:scale-95">
+                <span class="material-symbols-outlined">database</span>
+                <span class="text-[8px] font-bold uppercase tracking-widest mt-1">数据</span>
+            </div>
+            <div
+                class="flex flex-col items-center justify-center bg-[#46ff78]/10 text-[#46ff78] rounded-xl p-2 transition-transform active:scale-95">
+                <span class="material-symbols-outlined">settings</span>
+                <span class="text-[8px] font-bold uppercase tracking-widest mt-1">配置</span>
+            </div>
+            <div
+                class="flex flex-col items-center justify-center text-[#9093ff] p-2 hover:bg-[#192540] transition-transform active:scale-95">
+                <span class="material-symbols-outlined">terminal</span>
+                <span class="text-[8px] font-bold uppercase tracking-widest mt-1">日志</span>
+            </div>
+            <div
+                class="flex flex-col items-center justify-center text-[#9093ff] p-2 hover:bg-[#192540] transition-transform active:scale-95">
+                <span class="material-symbols-outlined">play_arrow</span>
+                <span class="text-[8px] font-bold uppercase tracking-widest mt-1">播放</span>
+            </div>
+        </nav>
+    </main>
+</body>
+
+</html>
