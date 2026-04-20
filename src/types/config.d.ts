@@ -174,6 +174,14 @@ declare namespace LX {
      * 歌手信息源优先级
      */
     'singer.sourcePriority': Array<'tx' | 'wy'>
+    /**
+     * 缓存命名规则
+     */
+    'cache.namingPattern'?: string
+    /**
+     * 缓存存储位置
+     */
+    serverCacheLocation?: string
   }
 }
 

@@ -103,6 +103,7 @@ const DEFAULT_SETTINGS = {
     enableServerCache: true, // 开启服务器缓存
     enableServerLyricCache: true, // 开启服务器歌词文件缓存
     serverCacheLocation: 'root', // 缓存位置: 'data' (synced) or 'root' (local)
+    serverCacheNamingPattern: 'simple', // 缓存命名规则: standard | simple | artist-title | title-only
     enableLyricCache: true,
     enableSongUrlCache: true,
     enableLyricGlow: true, // 歌词荧光效果 (默认开启)
@@ -2767,11 +2768,12 @@ async function fetchSongUrl(song, quality, isRetry = false, isSilent = false) {
     const cleanedSong = cleanSongData(song);
     const cacheKey = `lx_url_${cleanedSong.id}_${quality}`;
 
-    const allowServerCache = !isRetry && (settings.preferServerCache !== false);
+    const allowServerCache = settings.preferServerCache !== false;
     if (allowServerCache) {
-        let serverCacheUrl = await checkServerCache(cleanedSong, quality);
-        if (serverCacheUrl) {
+        let cacheResult = await checkServerCache(cleanedSong, quality, !!isRetry);
+        if (cacheResult.exists && !cacheResult.isCollision) {
             console.log(`[Cache] Server Hit: ${cleanedSong.name} (${quality})`);
+            let serverCacheUrl = cacheResult.url;
             // 应用代理逻辑 (以防服务器缓存返回的是原始 HTTP 链接)
             serverCacheUrl = await applyAutoProxy(serverCacheUrl, song);
             return { url: serverCacheUrl, sourceType: 'server_cache', quality };
@@ -2974,18 +2976,10 @@ async function checkServerCache(song, quality, exactQuality = false) {
         const res = await fetch(`/api/music/cache/check?${params}`, { headers });
         if (res.ok) {
             const data = await res.json();
-            if (data.exists) {
-                // 优先使用后端返回的原生 URL (已包含 correct search folder)
-                if (data.url) return data.url;
-
-                // Fallback: 兼容旧逻辑
-                const userPath = data.foundIn || username || '_open';
-                const filename = data.filename || data.url.split('/').pop();
-                return `/api/music/cache/file/${encodeURIComponent(userPath)}/${encodeURIComponent(filename)}`;
-            }
+            return data; // 返回完整数据对象，包含 exists, isCollision, url 等
         }
     } catch (e) { console.error('[ServerCache] Check failed:', e); }
-    return null;
+    return { exists: false };
 }
 
 /**
@@ -3198,7 +3192,13 @@ async function triggerServerCache(song, url, quality) {
     } catch (e) { console.error('[ServerCache] Trigger failed:', e); }
 }
 
-async function updateServerCacheConfig(location) {
+let lastNamingPattern = window.settings?.serverCacheNamingPattern || 'simple';
+
+async function updateServerCacheConfig(location, pattern) {
+    const loc = location || window.settings?.serverCacheLocation || 'root';
+    const pat = pattern || window.settings?.serverCacheNamingPattern || 'simple';
+    const oldPattern = lastNamingPattern;
+
     const headers = { 'Content-Type': 'application/json' };
     // 携带 Token（或兼容旧密码），让服务端正确识别身份
     Object.assign(headers, getUserAuthHeaders());
@@ -3206,15 +3206,56 @@ async function updateServerCacheConfig(location) {
     if (adminPass) headers['x-frontend-auth'] = adminPass;
 
     try {
-        const res = await fetch('/api/music/cache/config', {
+        const response = await fetch('/api/music/cache/config', {
             method: 'POST',
             headers: headers,
-            body: JSON.stringify({ location })
+            body: JSON.stringify({
+                location: loc,
+                namingPattern: pat
+            })
         });
-        if (!res.ok) {
-            console.warn('[ServerCache] Config update failed:', res.status);
-            // 失败时回滚 UI，使前后端保持一致
-            if (typeof syncSettingsUI === 'function') syncSettingsUI('serverCacheLocation', settings.serverCacheLocation);
+        if (!response.ok) {
+            console.warn('[ServerCache] Config update failed:', response.status);
+            // 失败时回滚 UI
+            if (typeof syncSettingsUI === 'function') {
+                if (location) syncSettingsUI('serverCacheLocation', settings.serverCacheLocation);
+                if (pattern) syncSettingsUI('serverCacheNamingPattern', settings.serverCacheNamingPattern);
+            }
+        } else {
+            console.log('[Cache] 服务器配置已同步:', loc, pat);
+
+            // 如果命名模式真的发生了变化（且不是初始化同步）
+            if (pattern && oldPattern && pattern !== oldPattern) {
+                const confirmed = await showSelect('歌曲命名格式变更', `检测到命名方式已更改为 "${pat}"。是否将服务器上已下载的本地歌曲重新命名为新的格式？<br><br><span class="text-xs opacity-70">注：这会同时移动对应的歌词文件，确保播放器能正常识别。</span>`, {
+                    confirmText: '现在重命名',
+                    cancelText: '保持现状',
+                    confirmColor: 'bg-emerald-500'
+                });
+
+                if (confirmed) {
+                    showLoading('正在重命名服务器文件...');
+                    try {
+                        const renameRes = await fetch('/api/music/cache/rename', {
+                            method: 'POST',
+                            headers: headers
+                        });
+                        const renameData = await renameRes.json();
+                        hideLoading();
+                        if (renameData.success) {
+                            showToast(`重命名完成！成功: ${renameData.successCount}, 跳过: ${renameData.skipCount}, 失败: ${renameData.failCount}`, 'success');
+                            // 刷新可能的列表显示
+                            if (typeof refreshCacheList === 'function') refreshCacheList();
+                        } else {
+                            showToast('重命名操作失败: ' + (renameData.message || '未知错误'), 'error');
+                        }
+                    } catch (e) {
+                        hideLoading();
+                        showToast('重命名请求异常', 'error');
+                        console.error(e);
+                    }
+                }
+            }
+            lastNamingPattern = pat; // 更新最后同步的模式
         }
     } catch (e) {
         console.error('[ServerCache] Config update failed:', e);
@@ -4920,6 +4961,7 @@ const SETTINGS_UI_MAP = {
     preferServerCache: { id: 'setting-prefer-server-cache', type: 'checkbox' },
     enableOnlyDownloadMode: { id: 'setting-only-download-mode', type: 'checkbox' },
     serverCacheLocation: { id: 'setting-server-cache-location', type: 'value' },
+    serverCacheNamingPattern: { id: 'setting-server-cache-naming', type: 'value' },
     enableProxyPlayback: { id: 'toggle-proxy-playback', type: 'checkbox' },
     enableProxyDownload: { id: 'toggle-proxy-download', type: 'checkbox' },
     enableAutoProxy: { id: 'toggle-auto-proxy', type: 'checkbox' },
@@ -5097,8 +5139,9 @@ async function clearCache(type) {
         clearServerLyric = await showSelect('清除缓存', '是否同时清除本地缓存文件夹内的歌词LRC文件？', { danger: true });
 
         if (clearServerLyric) {
+            const isLogined = !!localStorage.getItem('lx_user_token');
             const isPublicUser = !window.currentListData || !window.currentListData.username || window.currentListData.username === 'default';
-            if (isPublicUser && window.lx_config && window.lx_config['user.enablePublicRestriction']) {
+            if (isPublicUser && window.lx_config && window.lx_config['user.enablePublicRestriction'] && !isLogined) {
                 const isAdminSession = localStorage.getItem('lx_admin_password');
                 const enableServerLyricCache = window.settings && window.settings.enableServerLyricCache === true;
                 if (!enableServerLyricCache && !isAdminSession) {
@@ -5166,47 +5209,42 @@ async function clearCache(type) {
 
 // 更新服务器缓存大小统计
 async function updateServerCacheSize() {
-    const infoEl = document.getElementById('server-cache-info');
-    if (!infoEl) return;
+    const cacheEl = document.getElementById('server-cache-info');
+    const musicEl = document.getElementById('server-music-info');
+    if (!cacheEl && !musicEl) return;
+
+    const formatSize = (size) => {
+        if (size >= 1024 * 1024 * 1024) return (size / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+        if (size >= 1024 * 1024) return (size / (1024 * 1024)).toFixed(2) + ' MB';
+        if (size >= 1024) return (size / 1024).toFixed(2) + ' KB';
+        return size + ' B';
+    };
 
     try {
-        infoEl.textContent = '计算中...';
-        infoEl.className = 'text-sm font-bold text-gray-500 t-bg-main px-2 py-1 rounded';
+        if (cacheEl) cacheEl.textContent = '计算中...';
+        if (musicEl) musicEl.textContent = '计算中...';
 
-        const username = (window.currentListData && window.currentListData.username) || localStorage.getItem('lx_sync_user') || '';
-        const headers = {};
-        Object.assign(headers, getUserAuthHeaders());
+        const headers = getUserAuthHeaders();
         const response = await fetch('/api/music/cache/stats', { headers });
-        if (!response.ok) {
-            throw new Error('获取缓存统计失败');
-        }
+        if (!response.ok) throw new Error('获取缓存统计失败');
 
         const data = await response.json();
-        if (data.success) {
-            // 格式化文件大小
-            const size = data.data.totalSize;
-            const count = data.data.fileCount;
-            let sizeText = '';
+        if (data.success && data.data) {
+            const stats = data.data;
 
-            if (size >= 1024 * 1024 * 1024) {
-                sizeText = (size / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
-            } else if (size >= 1024 * 1024) {
-                sizeText = (size / (1024 * 1024)).toFixed(2) + ' MB';
-            } else if (size >= 1024) {
-                sizeText = (size / 1024).toFixed(2) + ' KB';
-            } else {
-                sizeText = size + ' B';
+            if (musicEl && stats.music) {
+                musicEl.textContent = `音乐: ${formatSize(stats.music.totalSize)} (${stats.music.fileCount} 首)`;
             }
-
-            infoEl.textContent = `${sizeText} (${count} 首)`;
-            infoEl.className = 'text-sm font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded';
+            if (cacheEl && stats.cache) {
+                cacheEl.textContent = `缓存: ${formatSize(stats.cache.totalSize)} (${stats.cache.fileCount} 首)`;
+            }
         } else {
-            throw new Error(data.message || '未知错误');
+            throw new Error(data.message || '获取失败');
         }
     } catch (e) {
-        console.error('[Cache] 获取服务器缓存统计失败:', e);
-        infoEl.textContent = '获取失败';
-        infoEl.className = 'text-sm font-bold text-red-500 bg-red-50 px-2 py-1 rounded';
+        console.warn('[Cache] 更新服务端统计失败:', e);
+        if (cacheEl) cacheEl.textContent = '获取失败';
+        if (musicEl) musicEl.textContent = '获取失败';
     }
 }
 
@@ -5233,12 +5271,14 @@ function toggleCacheDrawer() {
 
 async function refreshCacheList() {
     const container = document.getElementById('cache-list-container');
-    container.innerHTML = window.SystemDownloadManager.getStatusHtml('fa-spinner', '正在读取缓存列表...', true);
+    container.innerHTML = window.SystemDownloadManager.getStatusHtml('fa-spinner', '正在重新扫描文件并刷新列表...', true);
 
     try {
         const username = (window.currentListData && window.currentListData.username) || localStorage.getItem('lx_sync_user') || '';
-        const headers = {};
-        Object.assign(headers, getUserAuthHeaders());
+        const headers = getUserAuthHeaders();
+
+        // 刷新前先强制触发服务器端的磁盘同步/索引重建
+        await fetch('/api/music/cache/sync', { method: 'POST', headers });
 
         const res = await fetch('/api/music/cache/list', { headers });
         const data = await res.json();
@@ -5330,10 +5370,11 @@ function renderCacheList() {
                     <div class="flex items-center gap-2">
                         <span class="text-sm font-black t-text-main truncate tracking-tight">${item.name}</span>
                     </div>
-                    <div class="flex items-center gap-1.5 mt-0.5">
+                    <div class="flex items-center flex-wrap gap-1 mt-0.5">
                         ${sourceTagHtml}
                         ${qTagHtml}
                         <span class="text-[10px] font-bold t-text-muted truncate opacity-60">${item.singer}</span>
+                        ${item.album ? `<span class="text-[10px] t-text-muted opacity-40 ml-1 truncate">· ${item.album}</span>` : ''}
                     </div>
                     ${item.hasLyric === true ? `
                         <div class="mt-1">
@@ -5487,7 +5528,9 @@ function updateCacheBatchCount() {
 }
 
 async function removeCacheItem(filename) {
-    if ((!window.currentListData || !window.currentListData.username || window.currentListData.username === 'default') && window.lx_config && window.lx_config['user.enablePublicRestriction']) {
+    const isLogined = !!localStorage.getItem('lx_user_token');
+    const isPublicUser = !window.currentListData || !window.currentListData.username || window.currentListData.username === 'default';
+    if (isPublicUser && window.lx_config && window.lx_config['user.enablePublicRestriction'] && !isLogined) {
         const isAdminSession = localStorage.getItem('lx_admin_password');
         const enableServerCache = window.settings && window.settings.enableServerCache === true;
         if (!enableServerCache && !isAdminSession) {
@@ -10207,11 +10250,12 @@ async function handleDownloadClick(event) {
         const enablePublicRestriction = window.lx_config?.['user.enablePublicRestriction'];
         const isAdmin = !!localStorage.getItem('lx_admin_password');
         const isServerCacheAllowed = window.settings?.enableServerCache === true;
+        const isOnlyDownload = window.settings?.enableOnlyDownloadMode === true;
 
-        if (isPublic && enablePublicRestriction && !isServerCacheAllowed && !isAdmin) {
+        if (isPublic && enablePublicRestriction && !isServerCacheAllowed && !isAdmin && !isOnlyDownload) {
             showError('权限限制：缓存到服务器需要验证管理员。');
             if (typeof window.handleAdminAuth === 'function') {
-                const authorized = await window.handleAdminAuth('缓存到服务器需要验证管理员身份');
+                const authorized = await window.handleAdminAuth('缓存到服务器需要验证管理员身份、打开缓存歌曲文件设置或开启仅下载模式');
                 if (!authorized) return;
             } else {
                 return;
@@ -10320,6 +10364,40 @@ function showToast(type, message, duration = 3000) {
 function showSuccess(message) { showToast('success', message, 2000); }
 function showInfo(message) { showToast('info', message, 2000); }
 function showError(message) { showToast('error', message, 2000); }
+
+/**
+ * 全局加载提示 (showLoading)
+ */
+function showLoading(message = '正在处理...') {
+    if (document.getElementById('global-loading-overlay')) return;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'global-loading-overlay';
+    overlay.className = "fixed inset-0 z-[200] flex items-center justify-center p-4 animate-fade-in";
+    overlay.innerHTML = `
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px] transition-opacity duration-300"></div>
+        <div class="t-bg-panel rounded-2xl shadow-2xl p-8 flex flex-col items-center gap-4 relative z-[210] border t-border-main animate-slide-up">
+            <div class="relative">
+                <div class="w-12 h-12 rounded-full border-4 border-emerald-100 border-t-emerald-500 animate-spin"></div>
+                <i class="fas fa-music text-emerald-500 absolute inset-0 flex items-center justify-center text-xs"></i>
+            </div>
+            <p class="text-sm font-bold t-text-main animate-pulse">${message}</p>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+}
+
+function hideLoading() {
+    const overlay = document.getElementById('global-loading-overlay');
+    if (overlay) {
+        overlay.classList.add('opacity-0');
+        const content = overlay.querySelector('.t-bg-panel');
+        if (content) content.classList.add('scale-95');
+        setTimeout(() => overlay.remove(), 300);
+    }
+}
+window.showLoading = showLoading;
+window.hideLoading = hideLoading;
 
 // 清除所有当前显示的 Toast
 function dismissAllToasts() {

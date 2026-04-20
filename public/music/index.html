@@ -2167,6 +2167,25 @@
                                             <option value="data">DATA_PATH (WebDAV同步)</option>
                                             <option value="root">运行目录 (仅本地)</option>
                                         </select>
+
+                                        <div class="mt-4 mb-2 flex items-center justify-between">
+                                            <div class="text-sm font-bold t-text-main flex items-center">
+                                                歌曲命名方式 (Naming)
+                                                <span class="setting-tooltip-trigger ml-1">
+                                                    <i class="fas fa-question-circle"></i>
+                                                    <span
+                                                        class="setting-tooltip-content">设置服务端存储文件的命名规则（对标准缓存和仅下载模式均生效）。不影响已有文件。</span>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <select id="setting-server-cache-naming"
+                                            onchange="updateSetting('serverCacheNamingPattern', this.value); updateServerCacheConfig(null, this.value)"
+                                            class="w-full t-bg-main border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block p-2.5">
+                                            <option value="standard">标准 (Name_-_Singer_-_Source_-_ID_-_Quality)</option>
+                                            <option value="simple">简洁 (Name - Singer - Quality)</option>
+                                            <option value="artist-title">歌手 - 歌名 (Singer - Name - Quality)</option>
+                                            <option value="title-only">仅歌名 (Name - Quality)</option>
+                                        </select>
                                     </div>
 
                                     <div
@@ -2202,8 +2221,14 @@
                                                 </span>
                                             </span>
                                         </div>
-                                        <span id="server-cache-info"
-                                            class="text-sm font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">计算中...</span>
+                                        <div class="flex flex-col gap-1 text-right">
+                                            <div id="server-music-info" title="仅下载模式目录 (/music)"
+                                                class="text-[10px] md:text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
+                                                正在统计音乐...</div>
+                                            <div id="server-cache-info" title="标准缓存目录 (/cache)"
+                                                class="text-[10px] md:text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
+                                                正在统计缓存...</div>
+                                        </div>
                                     </div>
 
                                     <!-- Action Buttons -->

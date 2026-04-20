@@ -64,8 +64,9 @@ class App {
         // 绑定导航
         document.querySelectorAll('.nav-item').forEach(item => {
             item.addEventListener('click', (e) => {
-                e.preventDefault();
                 const view = item.dataset.view;
+                if (view === 'music') return; // 播放器链接直接跳转，不拦截
+                e.preventDefault();
                 this.switchView(view);
             });
         });
@@ -1735,8 +1736,13 @@ class App {
                 form.elements['admin.path'].value = config['admin.path'] ?? '';
             }
             if (form.elements['player.path']) {
-                form.elements['player.path'].value = config['player.path'] ?? '/music';
+                const pPath = config['player.path'] ?? '/music';
+                form.elements['player.path'].value = pPath === '' ? '/' : pPath;
             }
+
+            // [新增] 同时更新侧边栏链接
+            const navPlayerLink = document.getElementById('nav-player-link');
+            if (navPlayerLink) navPlayerLink.href = (config['player.path'] === '' ? '/' : (config['player.path'] ?? '/music'));
 
             // Subsonic 配置
             if (form.elements['subsonic.enable']) {
@@ -1767,7 +1773,7 @@ class App {
             pathError = '⚠️ 播放器路径必须以 / 开头';
         } else if (adminPath !== '' && !adminPath.startsWith('/')) {
             pathError = '⚠️ 后台路径必须以 / 开头（或留空表示根路径）';
-        } else if ((adminPath || '/') === playerPath) {
+        } else if ((adminPath || '/') === (playerPath === '/' ? '/' : playerPath.replace(/\/+$/, ''))) {
             pathError = '⚠️ 后台管理路径与播放器路径不能相同';
         } else if (adminPath.startsWith('/api') || playerPath.startsWith('/api')) {
             pathError = '⚠️ 路径不能以 /api 开头（与 API 路由冲突）';
@@ -1821,7 +1827,7 @@ class App {
 
             // 更新侧边栏播放器链接
             const navPlayerLink = document.getElementById('nav-player-link');
-            if (navPlayerLink) navPlayerLink.href = playerPath || '/music';
+            if (navPlayerLink) navPlayerLink.href = playerPath === '' ? '/' : (playerPath ?? '/music');
 
             if (!silent) {
                 if (res.warning) {
