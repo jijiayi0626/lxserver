@@ -319,7 +319,8 @@ async function nextPage() {
         }
 
         try {
-            const nextNetPage = (window.currentNetworkPage || 1) + 1;
+            const FETCH_PAGES_STEP = 5;
+            const nextNetPage = (window.currentNetworkPage || 1) + FETCH_PAGES_STEP;
             await window.doSearch(nextNetPage, true);
         } finally {
             if (btn) {

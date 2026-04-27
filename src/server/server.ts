@@ -3387,6 +3387,7 @@ const handleStartServer = async (port = 9527, ip = '127.0.0.1') => await new Pro
         const type = urlObj.searchParams.get('type') || 'song' // 新增 type 参数: song, singer, album, playlist
         const limit = parseInt(urlObj.searchParams.get('limit') || '20')
         const page = parseInt(urlObj.searchParams.get('page') || '1')
+        const fetchPages = parseInt(urlObj.searchParams.get('pages') || '1') // 新增：一次请求多少页
 
         if (!name) {
           res.writeHead(400); res.end('Missing name'); return
@@ -3399,14 +3400,17 @@ const handleStartServer = async (port = 9527, ip = '127.0.0.1') => await new Pro
 
           let result
           if (type === 'song') {
-            const MAX_PAGES = 10  // 最多拉取 10 页 = 200 首
             const PAGE_SIZE = 20
             let allSongs: any[] = []
-            for (let p = 1; p <= MAX_PAGES; p++) {
+            // 根据前端给定的起始页 (page) 和 请求量 (pages) 进行拉取
+            const startPage = page
+            const endPage = page + fetchPages - 1
+
+            for (let p = startPage; p <= endPage; p++) {
               const searchData = await musicSdk[source].musicSearch.search(name, p, PAGE_SIZE)
               const pageList: any[] = searchData.list || []
               allSongs = allSongs.concat(pageList)
-              // 如果本页返回数量小于 PAGE_SIZE，说明已经是最后一页
+              // 如果本页返回数量小于 PAGE_SIZE，说明已经是最后页
               if (pageList.length < PAGE_SIZE) break
             }
             result = allSongs
@@ -3432,7 +3436,7 @@ const handleStartServer = async (port = 9527, ip = '127.0.0.1') => await new Pro
             throw new Error(`Invalid search type: ${type}`)
           }
 
-          fs.appendFileSync(path.join(process.cwd(), 'debug.txt'), `[Search] Source: ${source}, Type: ${type}, Query: ${name}, Result Count: ${result.length}\n`)
+          fs.appendFileSync(path.join(process.cwd(), 'debug.txt'), `[Search] Source: ${source}, Type: ${type}, Query: ${name}, StartPage: ${page}, Pages: ${fetchPages}, Result Count: ${result.length}\n`)
           res.writeHead(200, { 'Content-Type': 'application/json' })
           res.end(JSON.stringify(result))
         } catch (err: any) {

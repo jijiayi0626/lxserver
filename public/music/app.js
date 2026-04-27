@@ -1114,6 +1114,7 @@ async function doSearch(page = 1, append = false) {
 
     // Network Search Logic
     const source = document.getElementById('search-source').value;
+    const FETCH_PAGES_STEP = 3; // 每次请求的页数步长
 
     // 保存到缓存
     localStorage.setItem('search-source', source);
@@ -1155,8 +1156,8 @@ async function doSearch(page = 1, append = false) {
             const results = await Promise.all(promises);
             list = results.flat();
         } else {
-            // Single Source Search — 后端已循环拉取全部页，直接渲染全量结果
-            const res = await fetch(`${API_BASE}/search?name=${encodeURIComponent(input)}&source=${source}&type=${type}`, { headers });
+            // Single Source Search — 支持前端决定拉取多少页
+            const res = await fetch(`${API_BASE}/search?name=${encodeURIComponent(input)}&source=${source}&type=${type}&page=${page}&pages=${FETCH_PAGES_STEP}`, { headers });
 
             if (!res.ok) {
                 throw new Error(`搜索请求失败: ${res.status} ${res.statusText}`);
@@ -1173,8 +1174,8 @@ async function doSearch(page = 1, append = false) {
             list = data.map(item => ({ ...item, source }));
         }
 
-        // singer/album 支持 append 追加翻页；song 由后端全量返回，直接渲染
-        if (append && (type === 'singer' || type === 'album')) {
+        // song/singer/album 统一支持 append 追加翻页
+        if (append && (type === 'song' || type === 'singer' || type === 'album')) {
             // [Fix] Ensure each new song has unique ID
             if (list && list.length > 0) {
                 list.forEach((item, idx) => {
@@ -1190,7 +1191,8 @@ async function doSearch(page = 1, append = false) {
                 const combinedList = [...(window.viewingPlaylist || []), ...newItems];
                 currentPage++;
                 if (type === 'singer') renderSingerResults(combinedList);
-                else renderAlbumResults(combinedList);
+                else if (type === 'album') renderAlbumResults(combinedList);
+                else renderResults(combinedList);
             } else {
                 showInfo('没有更多搜索结果了');
             }
@@ -1951,7 +1953,7 @@ function renderArtistSongsUI(list, page) {
         </div>
 
         <!-- 歌手详情内部分页控件 -->
-        <div class="h-12 border-t t-border-main flex items-center justify-between px-6 t-bg-main mt-2 flex-shrink-0">
+        <div class=" mt-2 flex-shrink-0">
             <button onclick="artistSongsPrevPage()"
                 class="text-gray-500 hover:text-emerald-600 disabled:opacity-30 transition-colors ${currentPage <= 1 ? 'opacity-30 pointer-events-none' : ''}">
                 <i class="fas fa-chevron-left"></i> 上一页

@@ -18,6 +18,10 @@ window.LocalMusicManager = {
     searchKeyword: '',
     searchTimer: null,
     isFilterPanelOpen: false,
+    manualIndexTargetItem: null, // 当前正在手动关联的本地项
+    currentManualResults: [],    // 搜索回来的结果缓存
+    currentManualPage: 1,        // 当前搜索页码
+    isManualSearching: false,    // 全局锁，防止滚动触发多次加载
 
     init() {
         // Initialization can run when the tab is clicked, or immediately.
@@ -822,6 +826,20 @@ window.LocalMusicManager = {
             modal.style.setProperty('z-index', '9999', 'important');
             modal.style.setProperty('opacity', '1', 'important');
 
+            // 监听滚动加载更多
+            const resContainer = document.getElementById('manual-index-results');
+            if (resContainer) {
+                // 移除旧监听器防止重复
+                resContainer.onscroll = null;
+                resContainer.onscroll = () => {
+                    if (this.isManualSearching) return;
+                    // 距离底部 50px 时触发
+                    if (resContainer.scrollTop + resContainer.clientHeight >= resContainer.scrollHeight - 50) {
+                        this.doManualSearch(this.currentManualPage + 1);
+                    }
+                };
+            }
+
             setTimeout(() => {
                 if (content) {
                     content.classList.remove('scale-95', 'opacity-0');
@@ -836,7 +854,8 @@ window.LocalMusicManager = {
         }
 
         if (input && input.value) {
-            this.doManualSearch();
+            this.currentManualPage = 1; // 重置页码
+            this.doManualSearch(1);
         }
     },
 
@@ -924,7 +943,9 @@ window.LocalMusicManager = {
         }
     },
 
-    async doManualSearch() {
+    async doManualSearch(page = 1) {
+        if (this.isManualSearching) return;
+
         const input = document.getElementById('manual-index-search-input');
         const keyword = input ? input.value.trim() : '';
         const sourceEl = document.getElementById('manual-index-source-select');
@@ -934,15 +955,19 @@ window.LocalMusicManager = {
 
         if (!keyword) return;
 
+        this.currentManualPage = page;
+        this.isManualSearching = true;
+
         const origBtnHtml = btn ? btn.innerHTML : '搜索';
         if (btn) {
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
         }
 
-        console.log('[ManualIndex] Searching for:', keyword, 'on source:', source);
+        console.log('[ManualIndex] Searching for:', keyword, 'on source:', source, 'page:', page);
 
-        if (container) {
+        if (page === 1 && container) {
+            this.currentManualResults = [];
             container.innerHTML = `
                 <div class="flex flex-col items-center justify-center h-full py-20 animate-fade-in">
                     <div class="music-visualizer-loader mb-12">
@@ -952,47 +977,54 @@ window.LocalMusicManager = {
                         <p class="text-xl t-text-main font-black tracking-[0.2em] mb-2 uppercase">Searching ${source}</p>
                         <div class="flex items-center justify-center gap-2 text-emerald-500 font-bold mb-4">
                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
-                            <span class="text-sm">正在请求线路</span>
+                            <span class="text-sm">正在请求第 ${page} 页</span>
                         </div>
-                        <p class="text-xs t-text-muted opacity-60">请稍候，服务器正在同步搜索结果...</p>
                     </div>
                 </div>`;
         }
 
         try {
-            // 注意：API 期望的是 name 参数而不是 word
-            const url = `/api/music/search?name=${encodeURIComponent(keyword)}&source=${source}&page=1`;
+            const url = `/api/music/search?name=${encodeURIComponent(keyword)}&source=${source}&page=${page}&limit=20`;
             const res = await fetch(url, {
                 headers: window.getUserAuthHeaders ? window.getUserAuthHeaders() : {}
             });
 
-            if (!res.ok) {
-                const text = await res.text();
-                throw new Error(text || `Status: ${res.status}`);
-            }
-
+            if (!res.ok) throw new Error(`Status: ${res.status}`);
             const result = await res.json();
 
-            // 适配两种可能的返回结构：{success, data: {list}} 或 直接返回数组
-            let searchList = [];
-            if (Array.isArray(result)) {
-                searchList = result;
-            } else if (result.success && result.data && result.data.list) {
-                searchList = result.data.list;
-            } else if (result.list) {
-                searchList = result.list;
-            }
+            let newList = [];
+            if (Array.isArray(result)) newList = result;
+            else if (result.success && result.data && result.data.list) newList = result.data.list;
+            else if (result.list) newList = result.list;
 
-            if (searchList && searchList.length > 0) {
-                this.currentManualResults = searchList;
+            if (newList && newList.length > 0) {
+                // 如果是第1页则替换，否则追加
+                if (page === 1) {
+                    this.currentManualResults = newList;
+                } else {
+                    // 去重合并
+                    const existingIds = new Set(this.currentManualResults.map(r => String(r.id || r.songmid)));
+                    const filteredNew = newList.filter(n => !existingIds.has(String(n.id || n.songmid)));
+                    this.currentManualResults = [...this.currentManualResults, ...filteredNew];
+                    if (filteredNew.length === 0 && page > 1) {
+                        if (typeof showInfo === 'function') showInfo('已经到底啦');
+                    }
+                }
                 this.renderManualSearchResults(this.currentManualResults);
             } else {
-                if (container) container.innerHTML = `<div class="text-center py-20 opacity-50 font-bold">未找到相关结果</div>`;
+                if (page === 1 && container) {
+                    container.innerHTML = `<div class="text-center py-20 opacity-50 font-bold">未找到相关结果</div>`;
+                } else if (page > 1) {
+                    if (typeof showInfo === 'function') showInfo('没有更多搜索结果了');
+                }
             }
         } catch (e) {
             console.error('[ManualIndex] Search failed:', e);
-            if (container) container.innerHTML = `<div class="text-center py-20 text-red-500 font-bold">搜索失败: ${e.message}</div>`;
+            if (page === 1 && container) {
+                container.innerHTML = `<div class="text-center py-20 text-red-500 font-bold">搜索失败: ${e.message}</div>`;
+            }
         } finally {
+            this.isManualSearching = false;
             if (btn) {
                 btn.disabled = false;
                 btn.innerHTML = origBtnHtml;
