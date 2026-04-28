@@ -73,6 +73,7 @@ interface CacheItem {
     quality: string
     filename: string
     folder: string // 'cache' or 'music'
+    subPath?: string // [New] Relative path within the folder (e.g. 'Pop/2024')
     mtime: number
     size: number
     lyricFilename?: string
@@ -338,7 +339,22 @@ export const syncCacheIndex = async (username?: string) => {
         const dir = getCacheDir(normalizedUsername, folder === 'music')
         if (!fs.existsSync(dir)) continue
 
-        const files = fs.readdirSync(dir)
+        // [Unified Enhancement] Recursive file walker
+        const getAllFiles = (dirPath: string, acc: string[] = [], base: string = dirPath) => {
+            if (!fs.existsSync(dirPath)) return acc
+            const entries = fs.readdirSync(dirPath, { withFileTypes: true })
+            for (const entry of entries) {
+                const fullPath = path.join(dirPath, entry.name)
+                if (entry.isDirectory()) {
+                    getAllFiles(fullPath, acc, base)
+                } else {
+                    acc.push(path.relative(base, fullPath).replace(/\\/g, '/'))
+                }
+            }
+            return acc
+        }
+
+        const files = getAllFiles(dir)
         for (const file of files) {
             if (file === 'cache_index.json' || file === 'music_index.json') continue
             const ext = path.extname(file).toLowerCase()
@@ -358,7 +374,11 @@ export const syncCacheIndex = async (username?: string) => {
             let album = existing?.album || ''
             let hasCover = existing?.hasCover || false
 
-            const nameWithoutExt = path.basename(file, ext)
+            // subPath calculation: the directory part of the relative path
+            const subPath = path.dirname(file) === '.' ? '' : path.dirname(file).replace(/\\/g, '/')
+            const fileNameOnly = path.basename(file)
+
+            const nameWithoutExt = path.basename(fileNameOnly, ext)
 
             if (!existing) {
                 // Not found by filename, try to parse from standard format
@@ -393,7 +413,7 @@ export const syncCacheIndex = async (username?: string) => {
             foundKeysOnDisk.add(compositeKey)
 
             // Always check for companion lyric file
-            const lrcFile = nameWithoutExt + '.lrc'
+            const lrcFile = file.substring(0, file.length - ext.length) + '.lrc'
             const hasLyricOnDisk = fs.existsSync(path.join(dir, lrcFile))
 
             // Update or add to index if anything changed (size, mtime, or lyric status)
@@ -410,6 +430,11 @@ export const syncCacheIndex = async (username?: string) => {
                     existing.hasLyric = hasLyricOnDisk
                     existing.lyricFilename = hasLyricOnDisk ? lrcFile : undefined
 
+                    if (existing.subPath !== subPath) {
+                        existing.subPath = subPath
+                        updated = true
+                    }
+
                     // If interval or quality/bitrate is missing/unknown, try to extract it
                     if (!existing.interval || existing.quality === 'unknown' || !existing.bitrate) {
                         try {
@@ -417,17 +442,16 @@ export const syncCacheIndex = async (username?: string) => {
                             tagger.loadPath(filePath)
                             const dur = tagger.duration
                             if (dur && !existing.interval) existing.interval = formatPlayTime(dur / 1000)
-
                             existing.bitrate = tagger.bitRate
                             existing.sampleRate = tagger.sampleRate
                             existing.bitDepth = tagger.bitDepth
-
                             if (!existing.quality || existing.quality === 'unknown') {
                                 existing.quality = detectQualityFromBitrate(tagger.bitRate, ext, tagger)
                             }
                             tagger.dispose()
                         } catch (e) { }
                     }
+                    if (existing.size !== stats.size || existing.hasLyric !== hasLyricOnDisk) updated = true
                 } else {
                     // (New file logic remains same but uses hasLyricOnDisk)
                     try {
@@ -439,40 +463,41 @@ export const syncCacheIndex = async (username?: string) => {
                         if (tagger.pictures && tagger.pictures.length > 0) hasCover = true
 
                         const dur = tagger.duration
-                        if (dur) interval = formatPlayTime(dur / 1000)
+                        const interval = dur ? formatPlayTime(dur / 1000) : ''
 
-                        bitrate = tagger.bitRate
-                        sampleRate = tagger.sampleRate
-                        bitDepth = tagger.bitDepth
-                        detectedQuality = detectQualityFromBitrate(tagger.bitRate, ext, tagger)
+                        const bitrate = tagger.bitRate
+                        const sampleRate = tagger.sampleRate
+                        const bitDepth = tagger.bitDepth
+                        const detectedQuality = detectQualityFromBitrate(tagger.bitRate, ext, tagger)
 
                         tagger.dispose()
-                    } catch (e) { }
 
-                    const item: CacheItem = {
-                        id: normalizedId,
-                        songmid: normalizedId,
-                        name: songName || nameWithoutExt || 'Unknown',
-                        singer: singer || 'Unknown',
-                        album: album || '',
-                        albumId: '',
-                        img: '',
-                        interval: interval,
-                        source: source || 'unknown',
-                        quality: detectedQuality,
-                        filename: file,
-                        folder: folder as any,
-                        mtime: stats.mtimeMs,
-                        size: stats.size,
-                        lyricFilename: hasLyricOnDisk ? lrcFile : undefined,
-                        ext: ext.replace('.', ''),
-                        hasCover: hasCover,
-                        hasLyric: hasLyricOnDisk,
-                        bitrate: bitrate,
-                        sampleRate: sampleRate,
-                        bitDepth: bitDepth
-                    }
-                    index.set(compositeKey, item)
+                        const item: CacheItem = {
+                            id: normalizedId,
+                            songmid: normalizedId,
+                            name: songName || nameWithoutExt || 'Unknown',
+                            singer: singer || 'Unknown',
+                            album: album || '',
+                            albumId: '',
+                            img: '',
+                            interval: interval,
+                            source: source || 'unknown',
+                            quality: detectedQuality,
+                            filename: file,
+                            folder: folder as any,
+                            subPath,
+                            mtime: stats.mtimeMs,
+                            size: stats.size,
+                            lyricFilename: hasLyricOnDisk ? lrcFile : undefined,
+                            ext: ext.replace('.', ''),
+                            hasCover: hasCover,
+                            hasLyric: hasLyricOnDisk,
+                            bitrate: bitrate,
+                            sampleRate: sampleRate,
+                            bitDepth: bitDepth
+                        }
+                        index.set(compositeKey, item)
+                    } catch (e) { }
                 }
                 updated = true
             }
@@ -714,9 +739,10 @@ export const linkLocalFile = async (oldFilename: string, songInfo: any, username
     const quality = item.quality || 'unknown'
     const ext = item.ext ? `.${item.ext}` : path.extname(oldFilename)
 
-    // Generate new filename based on pattern
+    // Generate new filename based on pattern (preserving subPath)
     const newBaseName = getFileName(songInfo, quality, folder === 'music', normalizedUsername)
-    const newFilename = newBaseName + ext
+    const subPath = item.subPath || ''
+    const newFilename = subPath ? path.join(subPath, newBaseName + ext).replace(/\\/g, '/') : newBaseName + ext
     const newPath = path.join(dir, newFilename)
 
     // Check collision
@@ -730,7 +756,7 @@ export const linkLocalFile = async (oldFilename: string, songInfo: any, username
         // Also rename lyrics if exists
         if (item.lyricFilename) {
             const oldLrcPath = path.join(dir, item.lyricFilename)
-            const newLrcFilename = newBaseName + '.lrc'
+            const newLrcFilename = subPath ? path.join(subPath, newBaseName + '.lrc').replace(/\\/g, '/') : newBaseName + '.lrc'
             const newLrcPath = path.join(dir, newLrcFilename)
             if (fs.existsSync(oldLrcPath)) {
                 fs.renameSync(oldLrcPath, newLrcPath)
@@ -779,7 +805,7 @@ export const getCacheCover = (filename: string, username?: string) => {
 
     for (const folder of roots) {
         const dir = getCacheDir(normalizedUsername, folder === 'music')
-        const filePath = path.join(dir, path.basename(filename))
+        const filePath = path.join(dir, filename) // [Fix] Allow subfolders
 
         if (fs.existsSync(filePath)) {
             try {
@@ -823,7 +849,8 @@ export const removeCacheFile = (filename: string, username?: string) => {
             // Delete associated lyric file
             const ext = path.extname(filename)
             if (ext !== '.lrc') {
-                const lrcPath = path.join(dir, filename.substring(0, filename.length - ext.length) + '.lrc')
+                const baseWithoutExt = filename.substring(0, filename.length - ext.length)
+                const lrcPath = path.join(dir, baseWithoutExt + '.lrc')
                 if (fs.existsSync(lrcPath)) {
                     fs.unlinkSync(lrcPath)
                 }
@@ -1000,31 +1027,44 @@ export const checkLyricCache = (songInfo: any, username?: string) => {
     // Physical scan fallback (for standard naming pattern: Name_-_Singer_-_Source_-_ID_-_Quality)
     const roots = ['cache', 'music']
     const basePaths = roots.map(folder => getCacheDir(normalizedUsername, folder === 'music'))
+
+    // [Fix] Recursively search for lyrics if not in index
+    const getAllLrcFiles = (dirPath: string, acc: string[] = []) => {
+        if (!fs.existsSync(dirPath)) return acc
+        const entries = fs.readdirSync(dirPath, { withFileTypes: true })
+        for (const entry of entries) {
+            const fullPath = path.join(dirPath, entry.name)
+            if (entry.isDirectory()) {
+                getAllLrcFiles(fullPath, acc)
+            } else if (entry.name.endsWith('.lrc')) {
+                acc.push(fullPath)
+            }
+        }
+        return acc
+    }
+
     const cleanId = (sid: string) => String(sid || '').replace(/^(tx|mg|wy|kg|kw|bd|mg)_/, '')
     const targetCleanId = cleanId(id)
 
     for (const dirPath of basePaths) {
-        if (!fs.existsSync(dirPath)) continue
-        try {
-            const files = fs.readdirSync(dirPath)
-            for (const file of files) {
-                if (!file.endsWith('.lrc')) continue
-                const fileNameWithoutExt = file.substring(0, file.lastIndexOf('.'))
-                const segments = fileNameWithoutExt.split('_-_')
-                if (segments.length >= 2) {
-                    const fileId = segments[segments.length - 2]
-                    const fileCleanId = cleanId(fileId)
-                    if (fileId === id || fileCleanId === id || fileId === targetCleanId || fileCleanId === targetCleanId) {
-                        return {
-                            exists: true,
-                            path: path.join(dirPath, file),
-                            content: parseLyrics(fs.readFileSync(path.join(dirPath, file), 'utf-8')),
-                            filename: file
-                        }
+        const lrcFiles = getAllLrcFiles(dirPath)
+        for (const filePath of lrcFiles) {
+            const file = path.basename(filePath)
+            const fileNameWithoutExt = file.substring(0, file.lastIndexOf('.'))
+            const segments = fileNameWithoutExt.split('_-_')
+            if (segments.length >= 2) {
+                const fileId = segments[segments.length - 2]
+                const fileCleanId = cleanId(fileId)
+                if (fileId === id || fileCleanId === id || fileId === targetCleanId || fileCleanId === targetCleanId) {
+                    return {
+                        exists: true,
+                        path: filePath,
+                        content: parseLyrics(fs.readFileSync(filePath, 'utf-8')),
+                        filename: path.relative(dirPath, filePath).replace(/\\/g, '/')
                     }
                 }
             }
-        } catch (e) { continue }
+        }
     }
 
     return { exists: false }
@@ -1074,13 +1114,13 @@ export const saveLyricCache = (songInfo: any, lyricsObj: any, username?: string,
         for (const folder of foldersToUpdate) {
             const existing = indexManager.get(normalizedUsername, id, folder, quality)
             if (existing) {
-                existing.lyricFilename = lyricFile
+                const root = getCacheDir(normalizedUsername, folder === 'music')
+                existing.lyricFilename = path.relative(root, finalPath).replace(/\\/g, '/')
                 existing.hasLyric = true
                 indexManager.save(normalizedUsername, folder)
                 break
             }
         }
-
         void checkAndCleanupCache(username)
         return true
     } catch (err: any) {
@@ -1247,7 +1287,7 @@ export const serveCacheFile = (req: http.IncomingMessage, res: http.ServerRespon
     const normalizedUsername = (username && username !== '_open' && username !== 'default') ? username : '_open'
     for (const folder of roots) {
         const dir = getCacheDir(normalizedUsername, folder === 'music')
-        const checkPath = path.join(dir, path.basename(filename))
+        const checkPath = path.join(dir, filename) // [Fix] Allow subfolders
         if (fs.existsSync(checkPath)) { filePath = checkPath; break }
     }
     if (!filePath) { res.writeHead(404); res.end('Not Found'); return }
@@ -1413,6 +1453,14 @@ export const switchFolder = async (filenames: string[], username: string | undef
         }
 
         const targetFolder: 'cache' | 'music' = sourceFolder === 'cache' ? 'music' : 'cache'
+
+        // [Constraint] Cannot move from music subfolder to cache
+        if (sourceFolder === 'music' && item.subPath && item.subPath !== '') {
+            console.log(`[FileCache] Move blocked: ${filename} is in a subfolder and cannot move to cache.`)
+            failCount++
+            continue
+        }
+
         const sourceDir = sourceFolder === 'music' ? musicDir : cacheDir
         const targetDir = targetFolder === 'music' ? musicDir : cacheDir
 
@@ -1551,5 +1599,117 @@ export const switchBaseLocation = async (filenames: string[], username: string |
     }
 
     return { successCount, failCount, targetLoc }
+}
+
+/**
+ * [New] Get all subdirectories in the music/cache folders
+ */
+export const getSubDirectories = (username: string | undefined, folder: 'cache' | 'music') => {
+    const normalizedUsername = (username && username !== '_open' && username !== 'default') ? username : '_open'
+    const root = getCacheDir(normalizedUsername, folder === 'music')
+    if (!fs.existsSync(root)) return []
+
+    const dirs = new Set<string>()
+
+    // 1. Get from index
+    const items = indexManager.getAll(normalizedUsername, folder)
+    items.forEach(item => { if (item.subPath) dirs.add(item.subPath) })
+
+    // 2. Scan physical tree (to include empty folders)
+    const scanDirs = (dirPath: string, base: string) => {
+        if (!fs.existsSync(dirPath)) return
+        const entries = fs.readdirSync(dirPath, { withFileTypes: true })
+        for (const entry of entries) {
+            if (entry.isDirectory()) {
+                const fullPath = path.join(dirPath, entry.name)
+                dirs.add(path.relative(base, fullPath).replace(/\\/g, '/'))
+                scanDirs(fullPath, base)
+            }
+        }
+    }
+    scanDirs(root, root)
+
+    return Array.from(dirs).sort()
+}
+
+/**
+ * [New] Create a subdirectory
+ */
+export const createSubDirectory = (username: string | undefined, folder: 'cache' | 'music', subPath: string) => {
+    const root = getCacheDir(username, folder === 'music')
+    const target = path.join(root, subPath)
+    if (!fs.existsSync(target)) {
+        fs.mkdirSync(target, { recursive: true })
+        return true
+    }
+    return false
+}
+
+/**
+ * [New] Categorize multiple files into a subdirectory
+ */
+export const categorizeFiles = async (filenames: string[], targetSubPath: string, username: string | undefined) => {
+    const normalizedUsername = (username && username !== '_open' && username !== 'default') ? username : '_open'
+    const folder = 'music' // Categorization is primarily for music folder
+    const root = getCacheDir(normalizedUsername, true)
+    const targetDir = path.join(root, targetSubPath)
+
+    if (targetSubPath && !fs.existsSync(targetDir)) {
+        fs.mkdirSync(targetDir, { recursive: true })
+    }
+
+    const allItems = indexManager.getAll(normalizedUsername, folder)
+    let successCount = 0
+    let failCount = 0
+
+    for (const filename of filenames) {
+        const item = allItems.find(i => i.filename === filename)
+        if (!item) {
+            console.warn(`[FileCache] Categorize: item not found for ${filename}`)
+            failCount++;
+            continue
+        }
+
+        const oldPath = path.join(root, filename)
+        const newFilename = targetSubPath ? path.join(targetSubPath, path.basename(filename)).replace(/\\/g, '/') : path.basename(filename)
+        const newPath = path.join(root, newFilename)
+
+        if (oldPath === newPath) { successCount++; continue }
+
+        try {
+            // Physically move file
+            if (fs.existsSync(oldPath)) {
+                fs.renameSync(oldPath, newPath)
+
+                // Move lyrics if exist
+                const ext = path.extname(filename)
+                const oldLrcPath = oldPath.substring(0, oldPath.length - ext.length) + '.lrc'
+                const newLrcPath = newPath.substring(0, newPath.length - ext.length) + '.lrc'
+                if (fs.existsSync(oldLrcPath)) {
+                    fs.renameSync(oldLrcPath, newLrcPath)
+                }
+
+                // Update index
+                item.filename = newFilename
+                item.subPath = targetSubPath
+                if (item.lyricFilename) {
+                    const musicExt = path.extname(newFilename)
+                    const lrcExt = path.extname(item.lyricFilename) || '.lrc'
+                    item.lyricFilename = newFilename.substring(0, newFilename.length - musicExt.length) + lrcExt
+                }
+            } else {
+                failCount++
+                continue
+            }
+
+            successCount++
+        } catch (e) {
+            console.error(`[FileCache] Categorize failed for ${filename}:`, e)
+            failCount++
+        }
+    }
+
+    indexManager.save(normalizedUsername, folder)
+    return { successCount, failCount }
 }
 

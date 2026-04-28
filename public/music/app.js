@@ -5905,7 +5905,7 @@ async function fetchLyric(song, quality = null) {
                 currentRawRlrc = data.rlyric || '';
                 currentRawKlrc = data.klyric || data.lxlyric || '';
 
-                console.log(`[Lyric] 使用浏览器本地缓存歌词: ${source}_${songmid} `);
+                console.log(`[Lyric] 使用浏览器本地缓存歌词: ${songmid} `);
                 initLyricPlayer();
                 applyLyricUpdate();
                 return; // 命中缓存，直接返回
