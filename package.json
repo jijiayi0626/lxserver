@@ -68,7 +68,7 @@
     "@types/ws": "8.5.4",
     "chalk": "^4.1.2",
     "changelog-parser": "^3.0.1",
-    "electron": "^41.2.2",
+    "electron": "^41.3.0",
     "electron-builder": "^26.8.1",
     "eslint-config-standard-with-typescript": "^39.1.1",
     "nodemon": "^3.0.1",
