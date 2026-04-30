@@ -59,7 +59,7 @@ module.exports = {
 
   // 前端管理控制台访问密码
   // 环境变量: FRONTEND_PASSWORD
-  "frontend.password": "123456",
+  "frontend.password": "12345678",
 
   // 用户列表
   // 环境变量: LX_USER_<用户名>=<密码> (例如: LX_USER_user1=123456)
@@ -109,11 +109,11 @@ module.exports = {
 
   // 后台管理界面访问路径（默认为空，即根路径 /）
   // 环境变量: ADMIN_PATH
-  "admin.path": "/admin",
+  "admin.path": "/",
 
   // Web播放器访问路径（默认为 /music）
   // 环境变量: PLAYER_PATH
-  "player.path": "/",
+  "player.path": "/music",
 
   // Subsonic 协议配置
   // 是否启用 Subsonic 协议支持 (服务默认开启)
