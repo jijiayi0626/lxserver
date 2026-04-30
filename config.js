@@ -109,11 +109,11 @@ module.exports = {
 
   // 后台管理界面访问路径（默认为空，即根路径 /）
   // 环境变量: ADMIN_PATH
-  "admin.path": "",
+  "admin.path": "/admin",
 
   // Web播放器访问路径（默认为 /music）
   // 环境变量: PLAYER_PATH
-  "player.path": "/music",
+  "player.path": "/",
 
   // Subsonic 协议配置
   // 是否启用 Subsonic 协议支持 (服务默认开启)
