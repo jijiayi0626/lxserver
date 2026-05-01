@@ -2194,6 +2194,75 @@ const handleStartServer = async (port = 9527, ip = '127.0.0.1') => await new Pro
         return
       }
 
+      // 1.1-B Get Subdirectories
+      if (pathname === '/api/music/cache/subdirs' && req.method === 'GET') {
+        const verified = verifyUserAuth(req)
+        if (!verified) {
+          res.writeHead(401, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ success: false, message: 'Unauthorized' }))
+          return
+        }
+        const folder = (urlObj.searchParams.get('folder') as 'cache' | 'music') || 'music'
+        const subdirs = fileCache.getSubDirectories(verified, folder)
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ success: true, data: subdirs }))
+        return
+      }
+
+      // 1.1-C Create Subdirectory
+      if (pathname === '/api/music/cache/mkdir' && req.method === 'POST') {
+        const verified = verifyUserAuth(req)
+        if (!verified) {
+          res.writeHead(401, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ success: false, message: 'Unauthorized' }))
+          return
+        }
+        void readBody(req).then(body => {
+          try {
+            const { folder, subPath } = JSON.parse(body)
+            if (!folder || !subPath) {
+              res.writeHead(400)
+              res.end('Missing params')
+              return
+            }
+            const success = fileCache.createSubDirectory(verified, folder, subPath)
+            res.writeHead(200, { 'Content-Type': 'application/json' })
+            res.end(JSON.stringify({ success }))
+          } catch (e) {
+            res.writeHead(500)
+            res.end('Error')
+          }
+        })
+        return
+      }
+
+      // 1.1-D Categorize Files
+      if (pathname === '/api/music/cache/categorize' && req.method === 'POST') {
+        const verified = verifyUserAuth(req)
+        if (!verified) {
+          res.writeHead(401, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ success: false, message: 'Unauthorized' }))
+          return
+        }
+        void readBody(req).then(async body => {
+          try {
+            const { filenames, subPath } = JSON.parse(body)
+            if (!Array.isArray(filenames)) {
+              res.writeHead(400)
+              res.end('Missing params')
+              return
+            }
+            const result = await fileCache.categorizeFiles(filenames, subPath, verified)
+            res.writeHead(200, { 'Content-Type': 'application/json' })
+            res.end(JSON.stringify({ success: true, ...result }))
+          } catch (e) {
+            res.writeHead(500)
+            res.end('Error')
+          }
+        })
+        return
+      }
+
       // 1.2 Batch Rename Cache Files
       if (pathname === '/api/music/cache/rename' && req.method === 'POST') {
         const verified = verifyUserAuth(req)
@@ -2736,8 +2805,8 @@ const handleStartServer = async (port = 9527, ip = '127.0.0.1') => await new Pro
             const username = verified
 
             // Get absolute path - folder can be 'cache' or 'music'
-            const musicDir = fileCache.getCacheDir(username, folder === 'music')
-            const filePath = path.join(musicDir, filename)
+            const dir = fileCache.getCacheDir(username, folder === 'music')
+            const filePath = path.join(dir, filename) // [Fix] Allow subfolders
 
             if (!fs.existsSync(filePath)) {
               throw new Error('文件不存在: ' + filename)

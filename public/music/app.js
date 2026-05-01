@@ -2230,7 +2230,7 @@ function renderResults(list) {
 
     if (!list || list.length === 0) {
         container.innerHTML = '<div class="text-center t-text-muted p-8">未找到相关结果</div>';
-        updatePaginationInfo(0, 0, 0);
+        updatePaginationInfo(0, 0, 0, 1, 1);
         return;
     }
 
@@ -2370,7 +2370,7 @@ function renderResults(list) {
     });
 
     // Update pagination info
-    updatePaginationInfo(startIndex + 1, endIndex, totalItems);
+    updatePaginationInfo(startIndex + 1, endIndex, totalItems, currentPage, totalPages);
 
     // Init Lazy Loader
     lazyLoadImages();
@@ -3539,9 +3539,9 @@ async function playSong(song, index, forceQuality = null, noPlay = false, isRetr
                         window.currentViewingListId = 'default';
                     }
                 } else {
-                    // 搜索结果：开启"切换歌单"时，切换到 defaultList
-                    const shouldSwitch = settings.switchPlaylistOnSearchPlay !== false;
-                    if (shouldSwitch && typeof currentListData !== 'undefined' && currentListData.defaultList) {
+                    // 搜索结果：关闭"切换歌单"时，才退回 defaultList
+                    const shouldSearchFallback = settings.switchPlaylistOnSearchPlay === false;
+                    if (shouldSearchFallback && typeof currentListData !== 'undefined' && currentListData.defaultList) {
                         currentPlaylist = currentListData.defaultList;
                         currentIndex = 0;
                         currentPlayingScope = 'local_list';
@@ -3549,7 +3549,6 @@ async function playSong(song, index, forceQuality = null, noPlay = false, isRetr
                     }
                 }
             }
-
         } catch (playError) {
             // [Fix] 仅在请求仍有效且非 AbortError 时显示“请点击”提示，防止切歌太快导致旧请求的错误覆盖新请求的新状态
             if (currentLoadingRequestId !== thisRequestId) return;
@@ -4696,17 +4695,6 @@ function formatTime(s) {
     return `${min < 10 ? '0' + min : min}:${sec < 10 ? '0' + sec : sec}`;
 }
 
-// Update pagination information display
-function updatePaginationInfo(start, end, total) {
-    const infoEl = document.getElementById('pagination-info');
-    if (infoEl) {
-        if (total === 0) {
-            infoEl.textContent = '暂无数据';
-        } else {
-            infoEl.textContent = `显示 ${start}-${end} 条，共 ${total} 条`;
-        }
-    }
-}
 
 // Load settings from localStorage
 function loadSettings() {
@@ -5917,7 +5905,7 @@ async function fetchLyric(song, quality = null) {
                 currentRawRlrc = data.rlyric || '';
                 currentRawKlrc = data.klyric || data.lxlyric || '';
 
-                console.log(`[Lyric] 使用浏览器本地缓存歌词: ${source}_${songmid} `);
+                console.log(`[Lyric] 使用浏览器本地缓存歌词: ${songmid} `);
                 initLyricPlayer();
                 applyLyricUpdate();
                 return; // 命中缓存，直接返回
