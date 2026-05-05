@@ -653,7 +653,7 @@ const handleStartServer = async (port = 9527, ip = '127.0.0.1') => await new Pro
     const adminPath = global.lx.config['admin.path'] ?? ''
 
     // 映射播放器逻辑 (无论是自定义路径还是前端硬编码的 /music/)
-    const isPlayerRequest = playerPath === '/'
+    const isPlayerRequest = (playerPath === '/' || playerPath === '')
       ? (pathname === '/' || (!pathname.startsWith('/api/') && !pathname.startsWith('/rest/') && (adminPath === '' || (pathname !== adminPath && !pathname.startsWith(adminPath + '/')))))
       : (pathname.startsWith(playerPath + '/') || pathname === playerPath)
 
@@ -728,7 +728,7 @@ const handleStartServer = async (port = 9527, ip = '127.0.0.1') => await new Pro
         targetPath = 'music/login.html'
       } else {
         // [优化] 如果根路径是播放器，且请求已经包含 /music/ 前缀，则不再重复叠加
-        if (activePrefix === '/' && subPath.startsWith('/music/')) {
+        if ((activePrefix === '/' || activePrefix === '') && subPath.startsWith('/music/')) {
           targetPath = subPath.slice(1)
         } else {
           targetPath = path.posix.join('music', subPath.startsWith('/') ? subPath.slice(1) : subPath)
