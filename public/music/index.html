@@ -932,11 +932,13 @@
             <!-- Header / Search Bar Helper (Top strip) -->
             <header class="h-16 t-bg-panel glass shadow-sm flex items-center justify-between px-3 md:px-6 z-10">
                 <div class="flex items-center gap-1.5 md:gap-3 min-w-0">
-                    <button onclick="toggleSidebar()" class="md:hidden t-text-muted p-2 hover:t-bg-track rounded-lg shrink-0">
+                    <button onclick="toggleSidebar()"
+                        class="md:hidden t-text-muted p-2 hover:t-bg-track rounded-lg shrink-0">
                         <i class="fas fa-bars text-xl"></i>
                     </button>
                     <!-- Page Title: Hide on mobile to save space -->
-                    <div class="active-tab-title text-base md:text-lg font-bold t-text-main truncate hidden sm:block" id="page-title">搜索音乐</div>
+                    <div class="active-tab-title text-base md:text-lg font-bold t-text-main truncate hidden sm:block"
+                        id="page-title">搜索音乐</div>
                     <!-- Sleep Timer Trigger -->
                     <div id="sleep-timer-trigger"
                         class="flex items-center gap-1 px-2 md:px-3 py-1.5 rounded-full hover:t-bg-track cursor-pointer transition-all border border-transparent hover:t-border-main group shrink-0"
@@ -950,21 +952,24 @@
                 <div class="flex items-center gap-1.5 md:gap-4 shrink-0">
                     <!-- User Info Area (Login/Username) -->
                     <div id="header-user-info" class="flex items-center">
-                        <button id="header-login-btn" 
+                        <button id="header-login-btn"
                             onclick="switchTab('settings'); setTimeout(() => { document.getElementById('btn-mode-local').scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100);"
                             class="hidden items-center gap-1.5 px-2 md:px-3 py-1.5 rounded-lg text-sm font-medium t-text-muted hover:t-bg-track hover:text-emerald-500 transition-all"
                             title="去登录">
                             <i class="fas fa-user-circle text-lg"></i>
                             <span class="text-xs md:text-sm">登录</span>
                         </button>
-                        <div id="header-user-display" class="hidden group relative items-center gap-2 px-2 md:px-3 py-1.5 rounded-lg text-sm font-medium t-text-main t-bg-panel border t-border-main shadow-sm cursor-pointer overflow-hidden transition-all hover:border-red-400/50">
+                        <div id="header-user-display"
+                            class="hidden group relative items-center gap-2 px-2 md:px-3 py-1.5 rounded-lg text-sm font-medium t-text-main t-bg-panel border t-border-main shadow-sm cursor-pointer overflow-hidden transition-all hover:border-red-400/50">
                             <!-- User Status View -->
-                            <div class="flex items-center gap-1.5 md:gap-2 group-hover:opacity-0 group-hover:scale-95 transition-all duration-200">
+                            <div
+                                class="flex items-center gap-1.5 md:gap-2 group-hover:opacity-0 group-hover:scale-95 transition-all duration-200">
                                 <i class="fas fa-user-check text-emerald-500 text-base md:text-sm shrink-0"></i>
-                                <span id="header-username" class="truncate max-w-[45px] sm:max-w-[100px] inline-block">用户名</span>
+                                <span id="header-username"
+                                    class="truncate max-w-[45px] sm:max-w-[100px] inline-block">用户名</span>
                             </div>
                             <!-- Logout Button (Shows on Hover) -->
-                            <button onclick="handleHeaderLogout(event)" 
+                            <button onclick="handleHeaderLogout(event)"
                                 class="absolute inset-0 flex items-center justify-center bg-red-500 text-white opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-200 font-bold text-xs">
                                 <i class="fas fa-sign-out-alt md:mr-1"></i> <span class="hidden md:inline">退出</span>
                             </button>
@@ -2581,8 +2586,9 @@
                                                 浏览器存储占用
                                                 <span class="setting-tooltip-trigger ml-1">
                                                     <i class="fas fa-question-circle"></i>
-                                                    <span class="setting-tooltip-content">当前浏览器 localStorage
-                                                        已使用空间（主要包含搜索历史、设置项等）。</span>
+                                                    <span class="setting-tooltip-content">当前浏览器 localStorage 及 IndexedDB
+                                                        (歌单数据)
+                                                        已使用空间。</span>
                                                 </span>
                                             </span>
                                         </div>
@@ -5292,6 +5298,7 @@
     <script src="js/lyric-utils.js"></script>
     <script src="js/lyric-parser.js"></script>
     <script src="js/quality.js"></script>
+    <script src="js/idb_store.js"></script>
     <script src="js/user_sync.js"></script>
     <script src="js/batch_pagination.js"></script>
     <script src="js/single_song_ops.js"></script>

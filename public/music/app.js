@@ -5224,23 +5224,38 @@ function applyPlayerBackground(mode) {
 
 // ========== 缓存统计与重置逻辑 ==========
 
-function calcStorageUsage() {
+async function calcStorageUsage() {
+    try {
+        // 1. 优先使用原生 API 获取包含 IndexedDB 的准确占用
+        if (navigator.storage && navigator.storage.estimate) {
+            const estimate = await navigator.storage.estimate();
+            const total = estimate.usage || 0;
+            if (total > 0) {
+                if (total < 1024) return total + ' B';
+                if (total < 1024 * 1024) return (total / 1024).toFixed(2) + ' KB';
+                return (total / (1024 * 1024)).toFixed(2) + ' MB';
+            }
+        }
+    } catch (e) {
+        console.warn('[Storage] 无法使用 Storage Estimate API:', e);
+    }
+
+    // 2. 回退到手动计算 localStorage (兜底)
     let total = 0;
     for (let x in localStorage) {
         if (!localStorage.hasOwnProperty(x)) continue;
         const val = localStorage.getItem(x);
-        total += (x.length + val.length) * 2; // UTF-16 characters are 2 bytes
+        if (val) total += (x.length + val.length) * 2;
     }
-    // Convert to readable format
     if (total < 1024) return total + ' B';
     if (total < 1024 * 1024) return (total / 1024).toFixed(2) + ' KB';
     return (total / (1024 * 1024)).toFixed(2) + ' MB';
 }
 
-function updateStorageStatsUI() {
+async function updateStorageStatsUI() {
     const el = document.getElementById('storage-usage-info');
     if (el) {
-        el.innerText = calcStorageUsage();
+        el.innerText = await calcStorageUsage();
     }
 }
 
@@ -7494,7 +7509,7 @@ async function handleSyncLogout() {
     localStorage.removeItem('lx_sync_url');
     localStorage.removeItem('lx_sync_code');
     localStorage.removeItem('lx_ws_auth');
-    localStorage.removeItem('lx_list_data');
+    window.ListStore.remove().catch(e => console.warn('[IDBStore] 清除失败:', e));
 
     // Clear forms
     const localUser = document.getElementById('sync-local-user');
@@ -7576,7 +7591,7 @@ async function handleLocalLogin() {
             loadLibraryData();
 
             // [Cache] Save list data immediately for offline availability / quick load
-            localStorage.setItem('lx_list_data', JSON.stringify(listData));
+            await window.ListStore.set(listData).catch(e => console.error('[IDBStore] 保存失败:', e));
 
             updateSyncStatus(`<i class="fas fa-check-circle text-emerald-500"></i> 已同步 (用户: ${user})`);
             // Save credentials to localStorage (Simple version)
@@ -7696,22 +7711,17 @@ function handleRemoteConnect() {
         syncManager.initRemote(url, code, {
             getData: async () => {
                 // Try to load from cache first
-                const cached = localStorage.getItem('lx_list_data');
-                if (cached) {
-                    try {
-                        const data = JSON.parse(cached);
-                        console.log('[Cache] 从缓存加载列表数据');
-                        return data;
-                    } catch (e) {
-                        console.error('[Cache] 解析缓存失败:', e);
-                    }
+                const cachedData = await window.ListStore.get().catch(() => null);
+                if (cachedData) {
+                    console.log('[Cache] 从缓存加载列表数据');
+                    return cachedData;
                 }
                 return currentListData || { defaultList: [], loveList: [], userList: [] };
             },
             setData: async (data) => {
                 console.log('[Sync] 远程数据已同步:', data);
                 // Save to cache
-                localStorage.setItem('lx_list_data', JSON.stringify(data));
+                await window.ListStore.set(data).catch(e => console.error('[IDBStore] 保存失败:', e));
                 // Update global
                 const oldUsername = currentListData ? currentListData.username : null;
                 currentListData = data;
@@ -7874,7 +7884,7 @@ async function handleRemoteOverwriteConnect(silent = false) {
                 currentListData = data;
                 if (oldUsername) currentListData.username = oldUsername;
 
-                localStorage.setItem('lx_list_data', JSON.stringify(data));
+                await window.ListStore.set(data).catch(e => console.error('[IDBStore] 保存失败:', e));
                 renderMyLists(data);
 
                 // 2. Push to local server (important!)
@@ -8543,7 +8553,7 @@ async function handleRemoveList(listId, event) {
 }
 
 // Auto-restore on page load
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     // 0. Load settings first
     loadSettings();
 
@@ -8587,19 +8597,19 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('[PlayMode] 恢复播放模式失败:', e);
     }
 
-    // 1. Restore cached list data
-    const cachedList = localStorage.getItem('lx_list_data');
-    if (cachedList) {
-        try {
-            currentListData = JSON.parse(cachedList);
+    // 1. Restore cached list data (from IndexedDB)
+    try {
+        const cachedList = await window.ListStore.get();
+        if (cachedList) {
+            currentListData = cachedList;
             const savedUser = localStorage.getItem('lx_sync_user');
             if (savedUser && currentListData) currentListData.username = savedUser; // Restore username from cache
 
             renderMyLists(currentListData);
             console.log('[Cache] 已恢复缓存的列表数据');
-        } catch (e) {
-            console.error('[Cache] 恢复列表数据失败:', e);
         }
+    } catch (e) {
+        console.error('[Cache] 恢复列表数据失败:', e);
     }
 
     // 2. Auto-reconnect or auto-login
@@ -8634,11 +8644,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Pre-populate authInfo in client
                     syncManager.initRemote(url, code, {
                         getData: async () => {
-                            const cached = localStorage.getItem('lx_list_data');
-                            return cached ? JSON.parse(cached) : { defaultList: [], loveList: [], userList: [] };
+                            const cachedData = await window.ListStore.get().catch(() => null);
+                            return cachedData || { defaultList: [], loveList: [], userList: [] };
                         },
                         setData: async (data) => {
-                            localStorage.setItem('lx_list_data', JSON.stringify(data));
+                            await window.ListStore.set(data).catch(e => console.error('[IDBStore] 保存失败:', e));
                             const oldUsername = currentListData ? currentListData.username : null;
                             currentListData = data;
                             if (oldUsername) currentListData.username = oldUsername; // Preserve username
@@ -8707,7 +8717,7 @@ async function refreshUserListData() {
         }
 
         // Save to cache
-        localStorage.setItem('lx_list_data', JSON.stringify(listData));
+        await window.ListStore.set(listData).catch(e => console.error('[IDBStore] 保存失败:', e));
         console.log('[Sync] List Data Refreshed');
     } catch (e) {
         console.error('[Sync] Failed to refresh list data:', e);
