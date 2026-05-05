@@ -10073,6 +10073,7 @@ window.toggleCommentModal = toggleCommentModal;
 window.switchCommentType = switchCommentType;
 window.refreshComments = refreshComments;
 window.fetchComments = fetchComments;
+window.checkServerCache = checkServerCache;
 
 
 // [Redundant block removed]
@@ -10313,7 +10314,13 @@ async function handleDownloadClick(event) {
     }
 
     const song = currentPlayingSong;
-    const options = ['浏览器下载', '缓存到服务器'];
+    
+    // [优化] 检测是否已缓存
+    const prefQuality = window.settings?.preferredQuality || '320k';
+    const checkResult = await window.checkServerCache?.(song, prefQuality);
+    const cacheSuffix = (checkResult?.exists && !checkResult?.isCollision) ? ' (已缓存)' : '';
+
+    const options = ['浏览器下载', `缓存到服务器${cacheSuffix}`];
     const modeText = window.settings?.['enableOnlyDownloadMode'] ? '仅下载模式' : '缓存模式';
     const selected = await showOptions('下载与缓存', `[${modeText}] 选择对 [${song.name}] 的操作：`, options);
 

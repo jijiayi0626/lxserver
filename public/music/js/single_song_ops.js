@@ -165,7 +165,12 @@ async function downloadSong(songOrId, forceQuality = null, suppressAlerts = fals
 
     let selected = skipPromptTarget;
     if (!selected) {
-        const options = ['浏览器下载', '缓存到服务器'];
+        // [优化] 检测是否已缓存
+        const prefQuality = window.settings?.preferredQuality || '320k';
+        const checkResult = await window.checkServerCache?.(song, prefQuality);
+        const cacheSuffix = (checkResult?.exists && !checkResult?.isCollision) ? ' (已缓存)' : '';
+
+        const options = ['浏览器下载', `缓存到服务器${cacheSuffix}`];
         const modeText = window.settings?.['enableOnlyDownloadMode'] ? '仅下载模式' : '缓存模式';
         selected = await showOptions('下载与缓存', `[${modeText}] 选择对 [${song.name}] 的操作：`, options);
     }
