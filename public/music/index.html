@@ -24,8 +24,8 @@
             posthog.init('phc_vvaqX7sm3RqmiqRbMCjETTc67XKjgqeMgmYHvsZr30f', { api_host: 'https://us.i.posthog.com' })
         }
     </script>
-    <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
-    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="/music/assets/logo.svg" type="image/svg+xml">
+    <link rel="manifest" href="/music/manifest.json">
     <link rel="stylesheet" href="css/theme_variables.css">
     <script src="assets/tailwindcss.js"></script>
     <script src="js/tailwind_setup.js"></script>
@@ -930,43 +930,70 @@
         <main class="flex-1 flex flex-col t-bg-main relative overflow-hidden">
 
             <!-- Header / Search Bar Helper (Top strip) -->
-            <header class="h-16 t-bg-panel glass shadow-sm flex items-center justify-between px-4 md:px-6 z-10">
-                <div class="flex items-center gap-3">
-                    <button onclick="toggleSidebar()" class="md:hidden t-text-muted p-2 hover:t-bg-track rounded-lg">
+            <header class="h-16 t-bg-panel glass shadow-sm flex items-center justify-between px-3 md:px-6 z-10">
+                <div class="flex items-center gap-1.5 md:gap-3 min-w-0">
+                    <button onclick="toggleSidebar()" class="md:hidden t-text-muted p-2 hover:t-bg-track rounded-lg shrink-0">
                         <i class="fas fa-bars text-xl"></i>
                     </button>
-                    <div class="active-tab-title text-lg font-bold t-text-main truncate" id="page-title">搜索音乐</div>
+                    <!-- Page Title: Hide on mobile to save space -->
+                    <div class="active-tab-title text-base md:text-lg font-bold t-text-main truncate hidden sm:block" id="page-title">搜索音乐</div>
                     <!-- Sleep Timer Trigger -->
                     <div id="sleep-timer-trigger"
-                        class="flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:t-bg-track cursor-pointer transition-all border border-transparent hover:t-border-main group ml-1"
+                        class="flex items-center gap-1 px-2 md:px-3 py-1.5 rounded-full hover:t-bg-track cursor-pointer transition-all border border-transparent hover:t-border-main group shrink-0"
                         onclick="openSleepTimerModal()" title="睡眠定时">
-                        <i class="far fa-clock t-text-muted group-hover:text-emerald-500 transition-colors"></i>
+                        <i class="far fa-clock t-text-muted group-hover:text-emerald-500 transition-colors text-sm"></i>
                         <span id="sleep-timer-countdown"
-                            class="text-xs font-mono font-bold text-emerald-600 hidden">00:00</span>
+                            class="text-[10px] md:text-xs font-mono font-bold text-emerald-600 hidden">00:00</span>
                     </div>
                 </div>
 
-                <div class="flex items-center gap-4">
+                <div class="flex items-center gap-1.5 md:gap-4 shrink-0">
+                    <!-- User Info Area (Login/Username) -->
+                    <div id="header-user-info" class="flex items-center">
+                        <button id="header-login-btn" 
+                            onclick="switchTab('settings'); setTimeout(() => { document.getElementById('btn-mode-local').scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100);"
+                            class="hidden items-center gap-1.5 px-2 md:px-3 py-1.5 rounded-lg text-sm font-medium t-text-muted hover:t-bg-track hover:text-emerald-500 transition-all"
+                            title="去登录">
+                            <i class="fas fa-user-circle text-lg"></i>
+                            <span class="text-xs md:text-sm">登录</span>
+                        </button>
+                        <div id="header-user-display" class="hidden group relative items-center gap-2 px-2 md:px-3 py-1.5 rounded-lg text-sm font-medium t-text-main t-bg-panel border t-border-main shadow-sm cursor-pointer overflow-hidden transition-all hover:border-red-400/50">
+                            <!-- User Status View -->
+                            <div class="flex items-center gap-1.5 md:gap-2 group-hover:opacity-0 group-hover:scale-95 transition-all duration-200">
+                                <i class="fas fa-user-check text-emerald-500 text-base md:text-sm shrink-0"></i>
+                                <span id="header-username" class="truncate max-w-[45px] sm:max-w-[100px] inline-block">用户名</span>
+                            </div>
+                            <!-- Logout Button (Shows on Hover) -->
+                            <button onclick="handleHeaderLogout(event)" 
+                                class="absolute inset-0 flex items-center justify-center bg-red-500 text-white opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-200 font-bold text-xs">
+                                <i class="fas fa-sign-out-alt md:mr-1"></i> <span class="hidden md:inline">退出</span>
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- PWA Install Button -->
                     <button id="pwa-install-btn"
-                        class="hidden items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors shadow-sm">
+                        class="hidden items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-2.5 py-1.5 rounded-lg text-sm font-medium transition-colors shadow-sm shrink-0">
                         <i class="fas fa-download"></i>
-                        <span class="hidden sm:inline">安装应用</span>
+                        <span class="hidden md:inline">安装应用</span>
                     </button>
 
-                    <!-- Logout Button (only shown when auth is enabled) -->
+                    <!-- Legacy Logout Button (Hidden on all screens as we have the new one above, or keep hidden md:flex if user really wants both) -->
                     <button id="logout-btn" onclick="handleLogout()"
-                        class="hidden items-center gap-1.5 t-text-muted hover:text-red-500 transition-colors px-2 py-1 rounded-lg hover:bg-red-50"
+                        class="hidden items-center gap-1.5 t-text-muted hover:text-red-500 transition-colors px-2 py-1 rounded-lg hover:bg-red-50 shrink-0"
                         title="退出登录">
                         <i class="fas fa-sign-out-alt"></i>
                         <span class="hidden sm:inline text-xs font-medium">退出</span>
                     </button>
 
-                    <a href="https://github.com/XCQ0607/lxserver" target="_blank"
-                        class="t-text-muted hover:t-text-muted transition-colors" title="GitHub">
-                        <i class="fab fa-github text-xl"></i>
-                    </a>
-                    <div class="text-sm t-text-muted" id="app-version">v1.0.0 Web</div>
+                    <!-- Hide social/version info on mobile -->
+                    <div class="hidden lg:flex items-center gap-4">
+                        <a href="https://github.com/XCQ0607/lxserver" target="_blank"
+                            class="t-text-muted hover:t-text-muted transition-colors" title="GitHub">
+                            <i class="fab fa-github text-xl"></i>
+                        </a>
+                        <div class="text-sm t-text-muted" id="app-version">v1.0.0 Web</div>
+                    </div>
                 </div>
             </header>
 

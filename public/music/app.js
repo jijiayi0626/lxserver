@@ -177,6 +177,61 @@ function getUserAuthHeaders() {
 }
 window.getUserAuthHeaders = getUserAuthHeaders;
 
+/**
+ * 更新顶部栏的用户状态显示 (登录按钮/用户名)
+ */
+function updateUserUI() {
+    const loginBtn = document.getElementById('header-login-btn');
+    const userDisplay = document.getElementById('header-user-display');
+    const usernameEl = document.getElementById('header-username');
+
+    if (!loginBtn || !userDisplay || !usernameEl) return;
+
+    const username = localStorage.getItem('lx_sync_user');
+    const token = localStorage.getItem('lx_user_token');
+
+    if (token && username) {
+        // 已登录
+        loginBtn.classList.add('hidden');
+        loginBtn.classList.remove('flex');
+        userDisplay.classList.add('flex');
+        userDisplay.classList.remove('hidden');
+        usernameEl.innerText = username;
+    } else {
+        // 未登录
+        loginBtn.classList.add('flex');
+        loginBtn.classList.remove('hidden');
+        userDisplay.classList.add('hidden');
+        userDisplay.classList.remove('flex');
+    }
+}
+window.updateUserUI = updateUserUI;
+
+/**
+ * 顶部栏退出登录处理 (带确认弹窗)
+ */
+async function handleHeaderLogout(e) {
+    if (e) e.stopPropagation();
+    
+    const confirmed = await showSelect('退出同步账号', '确定要退出当前账号并清除同步凭证吗？', { danger: true });
+    if (confirmed) {
+        localStorage.removeItem('lx_user_token');
+        localStorage.removeItem('lx_sync_user');
+        localStorage.removeItem('lx_sync_pass');
+        
+        showSuccess('已安全退出登录');
+        
+        // 更新 UI 状态
+        if (typeof updateUserUI === 'function') updateUserUI();
+        
+        // [可选] 如果当前在我的收藏页面，可能需要刷新列表
+        if (typeof renderMyLists === 'function') {
+            renderMyLists(null);
+        }
+    }
+}
+window.handleHeaderLogout = handleHeaderLogout;
+
 // 页面加载时：检查是否开启认证，若开启则显示登出按钮
 (async () => {
     try {
@@ -233,6 +288,9 @@ window.getUserAuthHeaders = getUserAuthHeaders;
                 }
             }, 500);
         }
+
+        // [新增] 更新 UI 上的用户名状态
+        updateUserUI();
 
     } catch (error) {
         console.error('[Auth] 初始化检查失败:', error);
@@ -334,6 +392,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 同步所有设置 UI
     syncSettingsUI();
+    updateUserUI();
 });
 
 // Dragging Logic
@@ -552,6 +611,8 @@ function switchTab(tabId) {
     setTimeout(() => {
         activeView.classList.remove('opacity-0');
         activeView.classList.add('opacity-100');
+        // [新增] 切换 Tab 时顺便检查并更新一次用户状态
+        if (typeof updateUserUI === 'function') updateUserUI();
     }, 10);
 
     // [新增] 切换到设置页面时刷新一次管理员状态和设置项 UI
