@@ -406,7 +406,13 @@ class DownloadManager {
             const res = await fetch('/api/music/cache/download', {
                 method: 'POST',
                 headers,
-                body: JSON.stringify({ songInfo: task.song, url: rawUrl, quality, enableOnlyDownloadMode: window.settings?.enableOnlyDownloadMode || false })
+                body: JSON.stringify({ 
+                    songInfo: task.song, 
+                    url: rawUrl, 
+                    quality, 
+                    enableOnlyDownloadMode: window.settings?.enableOnlyDownloadMode || false,
+                    embedLyric: !!(window.settings?.embedLyricToFile ?? true)
+                })
             });
 
             if (!res.ok) throw new Error('服务器拒绝缓存');
@@ -518,7 +524,13 @@ class DownloadManager {
                     `name=${encodeURIComponent(task.song.name)}`,
                     `singer=${encodeURIComponent(task.song.singer)}`,
                     `album=${encodeURIComponent(albumName)}`,
-                    coverUrl ? `pic=${encodeURIComponent(coverUrl)}` : ''
+                    coverUrl ? `pic=${encodeURIComponent(coverUrl)}` : '',
+                    // [新增] 传 source/songmid 供服务端调歌词接口，并标记需要嵌入歌词
+                    task.song.source ? `source=${encodeURIComponent(task.song.source)}` : '',
+                    (task.song.songmid || task.song.id) ? `songmid=${encodeURIComponent(task.song.songmid || task.song.id)}` : '',
+                    task.song.hash ? `hash=${encodeURIComponent(task.song.hash)}` : '',
+                    task.song.interval ? `interval=${encodeURIComponent(task.song.interval)}` : '',
+                    (window.settings?.embedLyricToFile !== false) ? 'lyric=1' : ''
                 ].filter(Boolean).join('&');
 
                 finalUrl = `/api/music/download?url=${encodeURIComponent(finalUrl)}&filename=${encodeURIComponent(filename)}&taskId=${task.id}&${metadataParams}`;
