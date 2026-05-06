@@ -13,7 +13,7 @@ import {
   SYNC_CLOSE_CODE,
 } from '@/constants'
 import { getUserSpace, releaseUserSpace, getUserName, getServerId, getUserDirname, migrateUserData, renameUserSpace, finishRenameUserSpace } from '@/user'
-import { createMsg2call } from 'message2call'
+import { createMessage2Call as createMsg2call } from 'message2call'
 import { ElFinderConnector, getSystemRoot } from './elfinderConnector'
 import formidable from 'formidable'
 // @ts-ignore
@@ -5358,9 +5358,9 @@ const handleStartServer = async (port = 9527, ip = '127.0.0.1') => await new Pro
     const msg2call = createMsg2call<LX.Sync.ClientSyncActions>({
       funcsObj: callObj,
       timeout: 120 * 1000,
-      sendMessage(data) {
+      sendMessage(data: any) {
         if (disconnected) throw new Error('disconnected')
-        void encryptMsg(socket.keyInfo, JSON.stringify(data)).then((data) => {
+        void encryptMsg(socket.keyInfo, JSON.stringify(data)).then((data: string) => {
           // console.log('sendData', eventName)
           socket.send(data)
         }).catch(err => {
@@ -5369,10 +5369,10 @@ const handleStartServer = async (port = 9527, ip = '127.0.0.1') => await new Pro
           socket.close(SYNC_CLOSE_CODE.failed)
         })
       },
-      onCallBeforeParams(rawArgs) {
+      onCallBeforeParams(rawArgs: any[]) {
         return [socket, ...rawArgs]
       },
-      onError(error, path, groupName) {
+      onError(error: Error, path: string[], groupName?: string) {
         const name = groupName ?? ''
         const userName = socket.userInfo?.name ?? ''
         const deviceName = socket.keyInfo?.deviceName ?? ''
