@@ -13,7 +13,7 @@ import {
   SYNC_CLOSE_CODE,
 } from '@/constants'
 import { getUserSpace, releaseUserSpace, getUserName, getServerId, getUserDirname, migrateUserData, renameUserSpace, finishRenameUserSpace } from '@/user'
-import { createMessage2Call as createMsg2call } from 'message2call'
+import { createMsg2call } from 'message2call'
 import { ElFinderConnector, getSystemRoot } from './elfinderConnector'
 import formidable from 'formidable'
 // @ts-ignore
@@ -5312,6 +5312,7 @@ const handleStartServer = async (port = 9527, ip = '127.0.0.1') => await new Pro
 
   wss = new WebSocketServer({
     noServer: true,
+    perMessageDeflate: false,
   })
 
   // WebDAV Sync Progress Broadcast
@@ -5372,7 +5373,7 @@ const handleStartServer = async (port = 9527, ip = '127.0.0.1') => await new Pro
       onCallBeforeParams(rawArgs: any[]) {
         return [socket, ...rawArgs]
       },
-      onError(error: Error, path: string[], groupName?: string) {
+      onError(error: Error, path: string[], groupName: string | null) {
         const name = groupName ?? ''
         const userName = socket.userInfo?.name ?? ''
         const deviceName = socket.keyInfo?.deviceName ?? ''
@@ -5452,6 +5453,8 @@ const handleStartServer = async (port = 9527, ip = '127.0.0.1') => await new Pro
       socket.removeListener('error', onSocketError)
 
       // 鉴权通过，升级协议
+      // 强制删除压缩扩展头，防止 permessage-deflate 协商导致 "RSV1 must be clear" 错误
+      delete request.headers['sec-websocket-extensions']
       wss?.handleUpgrade(request, socket, head, function done(ws) {
         wss?.emit('connection', ws, request)
       })
