@@ -1887,7 +1887,6 @@
                 </div>
 
                 <!-- Favorites View -->
-
                 <div id="view-favorites"
                     class="absolute inset-0 flex flex-col px-6 pt-6 md:px-12 md:pt-12 pb-44 md:pb-32 hidden opacity-0 transition-all duration-300">
                     <div class="flex-1 flex flex-col items-center justify-center t-text-muted">
@@ -1916,157 +1915,156 @@
 
                 <!-- Local Music View -->
                 <div id="view-localmusic"
-                    class="absolute inset-0 flex flex-col px-2 pt-2 md:px-6 md:pt-6 pb-44 md:pb-32 hidden opacity-0 transition-all duration-300 overflow-hidden">
+                    class="absolute inset-0 flex flex-col px-2 pt-2 md:px-6 md:pt-6 pb-44 md:pb-32 transition-all duration-300 overflow-hidden">
 
                     <!-- Settings and Filters Area -->
-                    <div class="flex flex-col gap-2 mb-2 shrink-0 px-1">
-                        <div class="flex items-center justify-between w-full gap-2">
-                            <div class="flex items-center gap-1.5 overflow-hidden">
-                                <h2 class="text-base font-bold t-text-main whitespace-nowrap">本地音乐</h2>
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-1.5 md:gap-3 mb-1.5 md:mb-2 shrink-0 px-1">
+                        <div class="flex items-center justify-between md:justify-start w-full md:w-auto gap-2">
+                            <div class="flex items-center gap-1 md:gap-2 overflow-hidden">
+                                <div class="flex items-baseline gap-1 md:gap-1.5">
+                                    <h2 class="text-sm md:text-base font-bold t-text-main whitespace-nowrap">本地音乐</h2>
+                                    <span id="lm-total-count" class="text-[9px] md:text-[10px] t-text-muted opacity-60 whitespace-nowrap">共 0 首</span>
+                                </div>
                                 <div
-                                    class="flex items-center gap-1 bg-gray-100/50 dark:bg-gray-700/30 p-1 rounded-lg border t-border-main scale-90 origin-left">
+                                    class="flex items-center gap-0.5 md:gap-1 bg-gray-100/50 dark:bg-gray-700/30 p-0.5 rounded-lg border t-border-main scale-90 md:scale-100 origin-left">
                                     <select id="lm-location-select" onchange="window.LocalMusicManager.changeLocation()"
-                                        class="lm-select !w-24 !py-0.5 !text-[10px]">
+                                        class="lm-select !w-16 md:!w-20 !py-0.5 !text-[9px] md:!text-[10px] !px-1">
                                         <option value="root">根目录</option>
                                         <option value="data">数据目录</option>
                                     </select>
                                     <div class="h-3 w-[1px] bg-gray-300 dark:bg-gray-600"></div>
                                     <button id="lm-subpath-btn" onclick="window.LocalMusicManager.openSubPathModal()"
-                                        class="text-[10px] t-text-main hover:text-[var(--c-500)] disabled:opacity-30 flex items-center gap-1 px-1">
-                                        <i class="fas fa-folder text-[10px]"></i>
-                                        <span id="lm-subpath-text" class="">全部</span>
+                                        class="text-[9px] md:text-[10px] t-text-main hover:text-[var(--c-500)] disabled:opacity-30 flex items-center gap-1 px-1">
+                                        <i class="fas fa-folder text-[9px] md:text-[10px]"></i>
+                                        <span id="lm-subpath-text" class="max-w-[40px] md:max-w-[60px] truncate">全部</span>
                                     </button>
                                 </div>
                             </div>
 
-                            <!-- 移动端按钮组 (Compact Row) -->
-                            <div class="flex items-center gap-1">
-                                <button id="lm-filter-toggle-btn" onclick="window.LocalMusicManager.toggleFilterPanel()"
-                                    class="w-7 h-7 md:w-9 md:h-9 flex items-center justify-center bg-gray-100 dark:bg-gray-700/50 rounded-lg md:rounded-xl hover:bg-[var(--c-500)] hover:text-white transition-all relative">
-                                    <i class="fas fa-filter text-[10px] md:text-sm"></i>
-                                    <span id="lm-filter-active-dot"
-                                        class="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-[var(--c-500)] rounded-full hidden"></span>
+                            <!-- Mobile Toggle Buttons -->
+                            <div class="flex md:hidden items-center gap-0.5">
+                                <button id="lm-filter-toggle-btn-mobile" onclick="window.LocalMusicManager.toggleFilterPanel()"
+                                    class="w-6 h-6 flex items-center justify-center bg-gray-100 dark:bg-gray-700/50 rounded hover:bg-[var(--c-500)] hover:text-white transition-all relative">
+                                    <i class="fas fa-filter text-[10px]"></i>
+                                    <span id="lm-filter-active-dot" class="absolute top-1 right-1 w-1 h-1 bg-[var(--c-500)] rounded-full hidden"></span>
                                 </button>
-                                <button onclick="window.LocalMusicManager.refresh()"
-                                    class="w-7 h-7 md:w-9 md:h-9 flex items-center justify-center bg-gray-100 dark:bg-gray-700/50 rounded-lg md:rounded-xl hover:bg-[var(--c-500)] hover:text-white transition-all"><i
-                                        class="fas fa-sync-alt text-[10px] md:text-sm"></i></button>
-                                <button onclick="window.LocalMusicManager.autoLinkAll()" title="智能检测"
-                                    class="w-7 h-7 md:w-9 md:h-9 flex items-center justify-center bg-gray-100 dark:bg-gray-700/50 rounded-lg md:rounded-xl hover:bg-purple-500 hover:text-white transition-all"><i
-                                        class="fas fa-magic text-[10px] md:text-sm"></i></button>
-                                <button onclick="window.LocalMusicManager.toggleBatchMode()"
-                                    class="w-7 h-7 md:w-9 md:h-9 flex items-center justify-center bg-gray-100 dark:bg-gray-700/50 rounded-lg md:rounded-xl hover:bg-blue-500 hover:text-white transition-all"><i
-                                        class="fas fa-list-ul text-[10px] md:text-sm"></i></button>
+                                <button onclick="window.LocalMusicManager.refresh()" class="w-6 h-6 flex items-center justify-center bg-gray-100 dark:bg-gray-700/50 rounded"><i class="fas fa-sync-alt text-[10px]"></i></button>
+                                <button onclick="window.LocalMusicManager.autoLinkAll()" class="w-6 h-6 flex items-center justify-center bg-gray-100 dark:bg-gray-700/50 rounded"><i class="fas fa-magic text-[10px]"></i></button>
+                                <button onclick="window.LocalMusicManager.toggleBatchMode()" class="w-6 h-6 flex items-center justify-center bg-gray-100 dark:bg-gray-700/50 rounded"><i class="fas fa-list-ul text-[10px]"></i></button>
                             </div>
                         </div>
-                        <div class="flex items-center justify-between px-1">
-                            <span id="lm-total-count" class="text-[10px] t-text-muted opacity-60">共 0 首</span>
-                            <div class="relative group hidden sm:block w-48 md:w-64">
-                                <i
-                                    class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 t-text-muted text-xs"></i>
+
+                        <!-- Desktop Search & Actions -->
+                        <div class="flex items-center gap-2 md:gap-3 flex-1 justify-end">
+                            <div class="relative group flex-1 max-w-[120px] md:max-w-[200px]">
+                                <i class="fas fa-search absolute left-2 top-1/2 -translate-y-1/2 t-text-muted text-[10px]"></i>
                                 <input type="text" id="lm-quick-search" placeholder="快速搜索..."
                                     oninput="window.LocalMusicManager.handleQuickSearch(event)"
-                                    class="w-full bg-gray-100 dark:bg-gray-800 border-none rounded-lg pl-9 pr-4 py-1.5 text-xs focus:ring-1 focus:ring-emerald-500/30">
+                                    class="w-full bg-gray-100 dark:bg-gray-800 border-none rounded-lg pl-7 pr-2 py-1 md:py-1.5 text-[10px] md:text-xs focus:ring-1 focus:ring-emerald-500/30">
+                            </div>
+                            
+                            <div class="hidden md:flex items-center gap-1">
+                                <button id="lm-filter-toggle-btn" onclick="window.LocalMusicManager.toggleFilterPanel()"
+                                    class="w-7 h-7 md:w-8 md:h-8 flex items-center justify-center bg-gray-100 dark:bg-gray-700/50 rounded-lg hover:bg-[var(--c-500)] hover:text-white transition-all relative" title="高级筛选">
+                                    <i class="fas fa-filter text-xs md:text-sm"></i>
+                                    <span id="lm-filter-active-dot-desktop" class="absolute top-1 right-1 w-1.5 h-1.5 bg-[var(--c-500)] rounded-full hidden"></span>
+                                </button>
+                                <button onclick="window.LocalMusicManager.refresh()" class="w-7 h-7 md:w-8 md:h-8 flex items-center justify-center bg-gray-100 dark:bg-gray-700/50 rounded-lg hover:bg-[var(--c-500)] hover:text-white transition-all" title="刷新"><i class="fas fa-sync-alt text-xs"></i></button>
+                                <button onclick="window.LocalMusicManager.autoLinkAll()" class="w-7 h-7 md:w-8 md:h-8 flex items-center justify-center bg-gray-100 dark:bg-gray-700/50 rounded-lg hover:bg-purple-500 hover:text-white transition-all" title="智能检测"><i class="fas fa-magic text-xs"></i></button>
+                                <button onclick="window.LocalMusicManager.toggleBatchMode()" class="w-7 h-7 md:w-8 md:h-8 flex items-center justify-center bg-gray-100 dark:bg-gray-700/50 rounded-lg hover:bg-blue-500 hover:text-white transition-all" title="批量操作"><i class="fas fa-list-ul text-xs"></i></button>
                             </div>
                         </div>
                     </div>
 
                     <!-- 高级筛选面板 (折叠式) -->
-                    <div id="lm-filter-panel" class="hidden overflow-hidden mb-4 transition-all duration-300">
+                    <div id="lm-filter-panel" class="hidden overflow-hidden transition-all duration-300 absolute md:static left-2 right-2 top-[55px] md:top-auto z-50 md:z-auto shadow-2xl md:shadow-none rounded-2xl">
                         <div
-                            class="bg-white/60 dark:bg-gray-800/60 rounded-xl p-2 md:p-6 border t-border-main backdrop-blur-xl shadow-lg relative max-h-[280px] md:max-h-none overflow-y-auto no-scrollbar">
+                            class="bg-white/95 dark:bg-gray-800/95 md:bg-white/40 md:dark:bg-gray-800/40 rounded-2xl p-3 pb-4 md:p-2 border t-border-main backdrop-blur-2xl md:backdrop-blur-sm relative max-h-[70vh] md:max-h-none overflow-y-auto custom-scrollbar">
                             <div
-                                class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2 md:gap-6 relative z-10">
-                                <!-- 关键词搜索 (全宽) -->
-                                <div class="col-span-2 space-y-1">
-                                    <label
-                                        class="hidden md:block text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-1">关键词搜索</label>
-                                    <div class="relative group">
-                                        <i
-                                            class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-emerald-500 text-[10px] md:text-sm"></i>
-                                        <input type="text" id="lm-search-input" placeholder="搜索歌曲..."
+                                class="flex flex-col md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-1.5 md:gap-2 relative z-10">
+                                <!-- 关键词搜索 -->
+                                <div class="md:col-span-2 flex items-center gap-2 shrink-0">
+                                    <label class="text-[9px] md:text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest ml-1 min-w-[35px] md:min-w-[45px]">搜索</label>
+                                    <div class="relative group flex-1">
+                                        <i class="fas fa-search absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-emerald-500 text-[9px] md:text-[10px]"></i>
+                                        <input type="text" id="lm-search-input" placeholder="歌曲/歌手/专辑..."
                                             oninput="window.LocalMusicManager.applyFilters()"
-                                            class="w-full bg-white/80 dark:bg-gray-900 border t-border-main rounded-lg pl-8 pr-3 py-1.5 md:py-2 text-xs md:text-sm focus:ring-2 focus:ring-emerald-500/30 outline-none t-text-main shadow-sm">
+                                            class="w-full bg-black/5 dark:bg-black/20 md:bg-white/60 md:dark:bg-gray-900 border t-border-main rounded-lg pl-7 pr-2 py-0.5 md:py-1 text-[10px] focus:ring-1 focus:ring-emerald-500/30 outline-none t-text-main">
                                     </div>
                                 </div>
 
-                                <!-- 音质筛选（多选标签） -->
-                                <div class="col-span-1 space-y-1">
-                                    <label class="hidden md:block text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-1">音频音质</label>
-                                    <div id="lm-quality-tags" class="lm-filter-tags">
-                                        <button class="lm-filter-tag" data-filter-value="128k" onclick="window.LocalMusicManager.toggleFilterTag('quality','128k')">128k</button>
-                                        <button class="lm-filter-tag" data-filter-value="320k" onclick="window.LocalMusicManager.toggleFilterTag('quality','320k')">320k</button>
-                                        <button class="lm-filter-tag" data-filter-value="flac" onclick="window.LocalMusicManager.toggleFilterTag('quality','flac')">FLAC</button>
-                                        <button class="lm-filter-tag" data-filter-value="flac24bit" onclick="window.LocalMusicManager.toggleFilterTag('quality','flac24bit')">Hi-Res</button>
+                                <!-- 音质筛选 -->
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <label class="text-[9px] md:text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest ml-1 min-w-[35px] md:min-w-[45px]">音质</label>
+                                    <div id="lm-quality-tags" class="lm-filter-tags flex overflow-x-auto no-scrollbar gap-1 flex-1">
+                                        <button class="lm-filter-tag shrink-0 !text-[9px] !px-1.5 !py-0.5 md:!px-2 md:!py-1" data-filter-value="128k" onclick="window.LocalMusicManager.toggleFilterTag('quality','128k')">128k</button>
+                                        <button class="lm-filter-tag shrink-0 !text-[9px] !px-1.5 !py-0.5 md:!px-2 md:!py-1" data-filter-value="320k" onclick="window.LocalMusicManager.toggleFilterTag('quality','320k')">320k</button>
+                                        <button class="lm-filter-tag shrink-0 !text-[9px] !px-1.5 !py-0.5 md:!px-2 md:!py-1" data-filter-value="flac" onclick="window.LocalMusicManager.toggleFilterTag('quality','flac')">FLAC</button>
+                                        <button class="lm-filter-tag shrink-0 !text-[9px] !px-1.5 !py-0.5 md:!px-2 md:!py-1" data-filter-value="flac24bit" onclick="window.LocalMusicManager.toggleFilterTag('quality','flac24bit')">Hi-Res</button>
                                     </div>
                                 </div>
 
-                                <!-- 平台来源（多选标签） -->
-                                <div class="col-span-1 space-y-1">
-                                    <label class="hidden md:block text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-1">平台来源</label>
-                                    <div id="lm-source-tags" class="lm-filter-tags">
-                                        <button class="lm-filter-tag" data-filter-value="wy" onclick="window.LocalMusicManager.toggleFilterTag('source','wy')">网易云</button>
-                                        <button class="lm-filter-tag" data-filter-value="tx" onclick="window.LocalMusicManager.toggleFilterTag('source','tx')">腾讯</button>
-                                        <button class="lm-filter-tag" data-filter-value="kg" onclick="window.LocalMusicManager.toggleFilterTag('source','kg')">酷狗</button>
-                                        <button class="lm-filter-tag" data-filter-value="kw" onclick="window.LocalMusicManager.toggleFilterTag('source','kw')">酷我</button>
-                                        <button class="lm-filter-tag" data-filter-value="mg" onclick="window.LocalMusicManager.toggleFilterTag('source','mg')">咪咕</button>
+                                <!-- 平台来源 -->
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <label class="text-[9px] md:text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest ml-1 min-w-[35px] md:min-w-[45px]">来源</label>
+                                    <div id="lm-source-tags" class="lm-filter-tags flex overflow-x-auto no-scrollbar gap-1 flex-1">
+                                        <button class="lm-filter-tag shrink-0 !text-[9px] !px-1.5 !py-0.5 md:!px-2 md:!py-1" data-filter-value="wy" onclick="window.LocalMusicManager.toggleFilterTag('source','wy')">网易</button>
+                                        <button class="lm-filter-tag shrink-0 !text-[9px] !px-1.5 !py-0.5 md:!px-2 md:!py-1" data-filter-value="tx" onclick="window.LocalMusicManager.toggleFilterTag('source','tx')">腾讯</button>
+                                        <button class="lm-filter-tag shrink-0 !text-[9px] !px-1.5 !py-0.5 md:!px-2 md:!py-1" data-filter-value="kg" onclick="window.LocalMusicManager.toggleFilterTag('source','kg')">酷狗</button>
+                                        <button class="lm-filter-tag shrink-0 !text-[9px] !px-1.5 !py-0.5 md:!px-2 md:!py-1" data-filter-value="kw" onclick="window.LocalMusicManager.toggleFilterTag('source','kw')">酷我</button>
+                                        <button class="lm-filter-tag shrink-0 !text-[9px] !px-1.5 !py-0.5 md:!px-2 md:!py-1" data-filter-value="mg" onclick="window.LocalMusicManager.toggleFilterTag('source','mg')">咪咕</button>
                                     </div>
                                 </div>
 
-                                <!-- 存储目录 (单选) -->
-                                <div class="col-span-1 space-y-1">
-                                    <label class="hidden md:block text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-1">存储位置</label>
-                                    <select id="lm-folder-select" onchange="window.LocalMusicManager.changeFolder()"
-                                        class="lm-select shadow-sm">
-                                        <option value="all">所有目录</option>
-                                        <option value="music">下载</option>
-                                        <option value="cache">缓存</option>
-                                    </select>
-                                </div>
-
-                                <!-- 数据状态（多选标签） -->
-                                <div class="col-span-2 md:col-span-1 space-y-1">
-                                    <label class="hidden md:block text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-1">数据状态</label>
-                                    <div id="lm-status-tags" class="lm-filter-tags">
-                                        <button class="lm-filter-tag" data-filter-value="missing_id3" onclick="window.LocalMusicManager.toggleFilterTag('status','missing_id3')">缺标签</button>
-                                        <button class="lm-filter-tag" data-filter-value="missing_cover" onclick="window.LocalMusicManager.toggleFilterTag('status','missing_cover')">缺封面</button>
-                                        <button class="lm-filter-tag" data-filter-value="missing_lyric_file" onclick="window.LocalMusicManager.toggleFilterTag('status','missing_lyric_file')">缺歌词</button>
-                                        <button class="lm-filter-tag" data-filter-value="missing_embed_lyric" onclick="window.LocalMusicManager.toggleFilterTag('status','missing_embed_lyric')">缺嵌入</button>
-                                        <button class="lm-filter-tag" data-filter-value="unindexed" onclick="window.LocalMusicManager.toggleFilterTag('status','unindexed')">未索引</button>
+                                <!-- 选项组合 (存储/排序) -->
+                                <div class="grid grid-cols-3 gap-1 md:col-span-2">
+                                    <div class="flex items-center gap-1">
+                                        <label class="hidden md:inline-block text-[9px] font-bold text-gray-500 uppercase">位置</label>
+                                        <select id="lm-folder-select" onchange="window.LocalMusicManager.changeFolder()"
+                                            class="lm-select !text-[9px] !py-0.5">
+                                            <option value="all">所有</option>
+                                            <option value="music">下载</option>
+                                            <option value="cache">缓存</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <label class="hidden md:inline-block text-[9px] font-bold text-gray-500 uppercase">排序</label>
+                                        <select id="lm-sort-by" onchange="window.LocalMusicManager.applyFilters()"
+                                            class="lm-select !text-[9px] !py-0.5">
+                                            <option value="mtime">时间</option>
+                                            <option value="name">歌名</option>
+                                            <option value="singer">歌手</option>
+                                            <option value="album">专辑</option>
+                                            <option value="size">大小</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <label class="hidden md:inline-block text-[9px] font-bold text-gray-500 uppercase">方向</label>
+                                        <select id="lm-sort-order" onchange="window.LocalMusicManager.applyFilters()"
+                                            class="lm-select !text-[9px] !py-0.5">
+                                            <option value="desc">降序</option>
+                                            <option value="asc">升序</option>
+                                        </select>
                                     </div>
                                 </div>
 
-                                <!-- 排序依据 -->
-                                <div class="col-span-1 space-y-1">
-                                    <label
-                                        class="hidden md:block text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-1">排序依据</label>
-                                    <select id="lm-sort-by" onchange="window.LocalMusicManager.applyFilters()"
-                                        class="lm-select shadow-sm">
-                                        <option value="mtime">添加时间</option>
-                                        <option value="name">歌曲名</option>
-                                        <option value="singer">歌手</option>
-                                        <option value="album">专辑</option>
-                                        <option value="subPath">分类</option>
-                                        <option value="source">来源</option>
-                                        <option value="size">大小</option>
-                                    </select>
+                                <!-- 数据状态 -->
+                                <div class="md:col-span-2 flex items-center gap-2 shrink-0">
+                                    <label class="text-[9px] md:text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest ml-1 min-w-[35px] md:min-w-[45px]">状态</label>
+                                    <div id="lm-status-tags" class="lm-filter-tags flex overflow-x-auto no-scrollbar gap-1 flex-1">
+                                        <button class="lm-filter-tag shrink-0 !text-[9px] !px-1.5 !py-0.5 md:!px-2 md:!py-1" data-filter-value="missing_id3" onclick="window.LocalMusicManager.toggleFilterTag('status','missing_id3')">缺标签</button>
+                                        <button class="lm-filter-tag shrink-0 !text-[9px] !px-1.5 !py-0.5 md:!px-2 md:!py-1" data-filter-value="missing_cover" onclick="window.LocalMusicManager.toggleFilterTag('status','missing_cover')">缺封面</button>
+                                        <button class="lm-filter-tag shrink-0 !text-[9px] !px-1.5 !py-0.5 md:!px-2 md:!py-1" data-filter-value="missing_lyric_file" onclick="window.LocalMusicManager.toggleFilterTag('status','missing_lyric_file')">缺歌词</button>
+                                        <button class="lm-filter-tag shrink-0 !text-[9px] !px-1.5 !py-0.5 md:!px-2 md:!py-1" data-filter-value="missing_embed_lyric" onclick="window.LocalMusicManager.toggleFilterTag('status','missing_embed_lyric')">缺嵌入</button>
+                                        <button class="lm-filter-tag shrink-0 !text-[9px] !px-1.5 !py-0.5 md:!px-2 md:!py-1" data-filter-value="unindexed" onclick="window.LocalMusicManager.toggleFilterTag('status','unindexed')">未索引</button>
+                                    </div>
                                 </div>
 
-                                <!-- 排序方向 -->
-                                <div class="col-span-1 space-y-1">
-                                    <label
-                                        class="hidden md:block text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-1">顺序</label>
-                                    <select id="lm-sort-order" onchange="window.LocalMusicManager.applyFilters()"
-                                        class="lm-select shadow-sm">
-                                        <option value="desc">降序</option>
-                                        <option value="asc">升序</option>
-                                    </select>
-                                </div>
-
-                                <!-- 重置按钮 (全宽) -->
-                                <div class="col-span-2 pt-1 md:pt-2">
+                                <!-- 重置按钮 -->
+                                <div class="md:col-span-1 pt-0.5 md:pt-0 shrink-0">
                                     <button onclick="window.LocalMusicManager.clearFilters()"
-                                        class="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-1.5 md:py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2">
-                                        <i class="fas fa-undo-alt text-[10px]"></i> 重置所有筛选
+                                        class="w-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 py-2 md:py-1 rounded-xl text-[9px] md:text-xs font-bold transition-all border border-emerald-500/20 flex items-center justify-center gap-1.5">
+                                        <i class="fas fa-undo-alt text-[7px]"></i> 重置筛选
                                     </button>
                                 </div>
                             </div>

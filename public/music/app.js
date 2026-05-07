@@ -216,9 +216,16 @@ async function handleHeaderLogout(e) {
     
     const confirmed = await showSelect('退出同步账号', '确定要退出当前账号并清除同步凭证吗？', { danger: true });
     if (confirmed) {
-        localStorage.removeItem('lx_user_token');
-        localStorage.removeItem('lx_sync_user');
-        localStorage.removeItem('lx_sync_pass');
+        // [核心优化] 直接调用 handleSyncLogout 即可复用所有清除逻辑和 UI 更新逻辑
+        if (typeof handleSyncLogout === 'function') {
+            await handleSyncLogout();
+        } else {
+            // 后备方案 (如果 handleSyncLogout 未定义)
+            localStorage.removeItem('lx_user_token');
+            localStorage.removeItem('lx_sync_user');
+            localStorage.removeItem('lx_sync_pass');
+            userToken = null;
+        }
         
         showSuccess('已安全退出登录');
         
@@ -7531,6 +7538,9 @@ async function handleSyncLogout() {
     // Reset UI Status (no logout button here)
     updateSyncStatus('<i class="fas fa-circle text-[8px] text-gray-300"></i> 状态: 未连接', false);
 
+    // [新增] 同步更新顶部栏 UI
+    if (typeof updateUserUI === 'function') updateUserUI();
+
     // Clear sidebar lists
     renderMyLists({ defaultList: [], loveList: [], userList: [] });
 
@@ -7605,6 +7615,9 @@ async function handleLocalLogin() {
             localStorage.setItem('lx_sync_mode', 'local'); // [Fix] Save mode
             localStorage.setItem('lx_sync_user', user);
             localStorage.setItem('lx_sync_pass', pass);
+
+            // [新增] 成功登录后立即更新顶部栏 UI
+            if (typeof updateUserUI === 'function') updateUserUI();
 
             // [New] Fetch settings from server if enabled
             if (settings.saveAccountSettingsToFile) {
