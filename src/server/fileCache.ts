@@ -339,9 +339,9 @@ export const syncCacheIndex = async (username?: string) => {
         const foundKeysOnDisk = new Set<string>()
 
         // Pre-build a filename to Item map within this folder for fast lookup
-        const filenameToItemMap = new Map<string, CacheItem>()
-        for (const item of index.values()) {
-            filenameToItemMap.set(item.filename, item)
+        const filenameToItemMap = new Map<string, { key: string, item: CacheItem }>()
+        for (const [key, item] of index.entries()) {
+            filenameToItemMap.set(item.filename, { key, item })
         }
         const dir = getCacheDir(normalizedUsername, folder === 'music')
         if (!fs.existsSync(dir)) continue
@@ -371,7 +371,9 @@ export const syncCacheIndex = async (username?: string) => {
             const stats = fs.statSync(filePath)
 
             // Try to find if this file is already known in index by its filename
-            let existing = filenameToItemMap.get(file)
+            let existingEntry = filenameToItemMap.get(file)
+            let existing = existingEntry?.item
+            let oldKey = existingEntry?.key
 
             let songId = existing?.id || ''
             let songName = existing?.name || ''
@@ -416,21 +418,15 @@ export const syncCacheIndex = async (username?: string) => {
             if (!songId) continue
             // Normalize ID
             const normalizedId = songId.includes('_') ? songId : `${source || 'unknown'}_${songId}`
-            const compositeKey = `${normalizedId}_${quality || 'unknown'}`
-            foundKeysOnDisk.add(compositeKey)
 
             // Always check for companion lyric file
             const lrcFile = file.substring(0, file.length - ext.length) + '.lrc'
             const hasLyricOnDisk = fs.existsSync(path.join(dir, lrcFile))
 
+            let finalQuality = quality || 'unknown'
+
             // Update or add to index if anything changed (size, mtime, or lyric status)
             if (!existing || existing.size !== stats.size || existing.hasLyric !== hasLyricOnDisk || !existing.interval || existing.quality === 'unknown' || !existing.bitrate) {
-                let interval = existing?.interval || ''
-                let detectedQuality: LX.Quality = (existing?.quality as LX.Quality) || 'unknown'
-                let bitrate = existing?.bitrate
-                let sampleRate = existing?.sampleRate
-                let bitDepth = existing?.bitDepth
-
                 if (existing) {
                     existing.size = stats.size
                     existing.mtime = stats.mtimeMs
@@ -464,8 +460,15 @@ export const syncCacheIndex = async (username?: string) => {
                         } catch (e) { }
                     }
                     if (existing.size !== stats.size || existing.hasLyric !== hasLyricOnDisk) updated = true
+                    finalQuality = existing.quality
                 } else {
                     // (New file logic remains same but uses hasLyricOnDisk)
+                    let interval = ''
+                    let bitrate: number | undefined
+                    let sampleRate: number | undefined
+                    let bitDepth: number | undefined
+                    let hasEmbedLyric = false
+
                     try {
                         const tagger = new MusicTagger()
                         tagger.loadPath(filePath)
@@ -475,47 +478,59 @@ export const syncCacheIndex = async (username?: string) => {
                         if (tagger.pictures && tagger.pictures.length > 0) hasCover = true
 
                         const dur = tagger.duration
-                        const interval = dur ? formatPlayTime(dur / 1000) : ''
+                        interval = dur ? formatPlayTime(dur / 1000) : ''
 
-                        const bitrate = tagger.bitRate
-                        const sampleRate = tagger.sampleRate
-                        const bitDepth = tagger.bitDepth
-                        const detectedQuality = detectQualityFromBitrate(tagger.bitRate, ext, tagger)
+                        bitrate = tagger.bitRate
+                        sampleRate = tagger.sampleRate
+                        bitDepth = tagger.bitDepth
+                        finalQuality = detectQualityFromBitrate(tagger.bitRate, ext, tagger)
+                        
                         // [新增] 检测是否已嵌入歌词 USLT 标签
                         const lyricsInTag = tagger.lyrics
-                        const hasEmbedLyric = !!(lyricsInTag && lyricsInTag.trim().length > 10)
+                        hasEmbedLyric = !!(lyricsInTag && lyricsInTag.trim().length > 10)
 
                         tagger.dispose()
-
-                        const item: CacheItem = {
-                            id: normalizedId,
-                            songmid: normalizedId,
-                            name: songName || nameWithoutExt || 'Unknown',
-                            singer: singer || 'Unknown',
-                            album: album || '',
-                            albumId: '',
-                            img: '',
-                            interval: interval,
-                            source: source || 'unknown',
-                            quality: detectedQuality,
-                            filename: file,
-                            folder: folder as any,
-                            subPath,
-                            mtime: stats.mtimeMs,
-                            size: stats.size,
-                            lyricFilename: hasLyricOnDisk ? lrcFile : undefined,
-                            ext: ext.replace('.', ''),
-                            hasCover: hasCover,
-                            hasLyric: hasLyricOnDisk,
-                            hasEmbedLyric,
-                            bitrate: bitrate,
-                            sampleRate: sampleRate,
-                            bitDepth: bitDepth
-                        }
-                        index.set(compositeKey, item)
                     } catch (e) { }
+
+                    const item: CacheItem = {
+                        id: normalizedId,
+                        songmid: normalizedId,
+                        name: songName || nameWithoutExt || 'Unknown',
+                        singer: singer || 'Unknown',
+                        album: album || '',
+                        albumId: '',
+                        img: '',
+                        interval: interval,
+                        source: source || 'unknown',
+                        quality: finalQuality as any,
+                        filename: file,
+                        folder: folder as any,
+                        subPath,
+                        mtime: stats.mtimeMs,
+                        size: stats.size,
+                        lyricFilename: hasLyricOnDisk ? lrcFile : undefined,
+                        ext: ext.replace('.', ''),
+                        hasCover: hasCover,
+                        hasLyric: hasLyricOnDisk,
+                        hasEmbedLyric,
+                        bitrate: bitrate,
+                        sampleRate: sampleRate,
+                        bitDepth: bitDepth
+                    }
+                    existing = item
                 }
                 updated = true
+            }
+
+            const compositeKey = `${normalizedId}_${finalQuality || 'unknown'}`
+            foundKeysOnDisk.add(compositeKey)
+
+            if (oldKey && oldKey !== compositeKey) {
+                index.delete(oldKey)
+                index.set(compositeKey, existing!)
+                updated = true
+            } else if (!oldKey) {
+                index.set(compositeKey, existing!)
             }
         }
 

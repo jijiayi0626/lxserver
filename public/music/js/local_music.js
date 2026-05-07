@@ -447,7 +447,7 @@ window.LocalMusicManager = {
             if (hasActiveFilters) dot.classList.remove('hidden');
             else dot.classList.add('hidden');
         }
-        
+
         // 同步所有 select 的 active 状态（非 all 时背景高亮）
         this._syncSelectActive('lm-folder-select');
         this._syncSelectActive('lm-sort-by');
@@ -549,22 +549,31 @@ window.LocalMusicManager = {
                             ${item.hasCover ? '<span class="text-[10px] text-emerald-500 border border-gray-400/40 dark:border-gray-600/50 rounded px-1 scale-90 hidden sm:inline-block" title="已嵌入封面">封</span>' : ''}
                         </div>
                         <!-- Mobile extra info (second row) -->
-                        <div class="sm:hidden text-[9px] t-text-muted mt-1 flex items-center gap-2 flex-wrap opacity-80">
-                            <div class="flex items-center gap-1">
+                        <div class="sm:hidden text-[9px] mt-1.5 flex items-center gap-1.5 flex-wrap">
+                            <div class="flex items-center gap-1 px-1.5 py-0.5 bg-gray-100/80 dark:bg-gray-800/80 rounded-full t-text-muted">
                                 ${folderIcon}
-                                <span class="font-bold text-emerald-600/80 uppercase tracking-tighter">${item.source === 'unknown' ? '??' : item.source}</span>
+                                <span class="font-bold uppercase tracking-tighter">${item.source === 'unknown' ? '未知' : item.source}</span>
                             </div>
-                            <div class="h-2.5 w-[1px] bg-gray-300 dark:bg-gray-700"></div>
-                            ${item.subPath ? `<span class="font-mono text-emerald-500 truncate max-w-[60px]">${item.subPath}</span>` : ''}
+                            
+                            ${item.subPath ? `<span class="t-text-muted opacity-50 truncate max-w-[60px] italic">${item.subPath}</span>` : ''}
+                            
                             <div class="flex items-center gap-1">
-                                ${missingID3 ? '<span class="px-1 py-0 bg-red-100 text-red-600 dark:bg-red-900/40 rounded-sm font-bold scale-90 origin-left">缺标签</span>' : ''}
-                                ${missingCover ? '<span class="px-1 py-0 bg-orange-100 text-orange-600 dark:bg-orange-900/40 rounded-sm font-bold scale-90 origin-left">缺封面</span>' : ''}
-                                ${missingLyric ? '<span class="px-1 py-0 bg-yellow-100 text-yellow-600 dark:bg-yellow-900/40 rounded-sm font-bold scale-90 origin-left">缺词</span>' : ''}
-                                ${(!missingID3 && !missingCover && !missingLyric) ? '<span class="px-1 py-0 bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 rounded-sm font-bold scale-90 origin-left">完整</span>' : ''}
+                                ${missingID3 ? '<span class="px-1 py-0 bg-red-50 text-red-500 border border-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/30 rounded-sm font-medium">缺标签</span>' : ''}
+                                ${missingCover ? '<span class="px-1 py-0 bg-orange-50 text-orange-500 border border-orange-100 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-900/30 rounded-sm font-medium">缺封面</span>' : ''}
+                                ${missingLyric ? '<span class="px-1 py-0 bg-yellow-50 text-yellow-600 border border-yellow-100 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-900/30 rounded-sm font-medium">缺词</span>' : ''}
+                                ${(!missingID3 && !missingCover && !missingLyric) ? '<span class="px-1 py-0 bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-900/30 rounded-sm font-medium">完整</span>' : ''}
                             </div>
-                            <div class="ml-auto flex items-center gap-1 scale-90 origin-right">
-                                ${item.hasEmbedLyric ? '<span class="text-emerald-500 border border-gray-400/40 dark:border-gray-600/80 rounded px-1" title="已嵌入歌词标签">词</span>' : ''}
-                                ${item.hasCover ? '<span class="text-emerald-500 border border-gray-400/40 dark:border-gray-600/80 rounded px-1" title="已嵌入封面">封</span>' : ''}
+
+                            ${isUnindexed ? `
+                                <button onclick="window.LocalMusicManager.openManualIndexModal(${index})"
+                                        class="px-1.5 py-0.5 bg-emerald-500 text-white rounded-md font-bold shadow-sm shadow-emerald-500/20 active:scale-95 transition-all flex items-center gap-1">
+                                    <i class="fas fa-link text-[8px]"></i>关联
+                                </button>
+                            ` : ''}
+                            
+                            <div class="ml-auto flex items-center gap-1">
+                                ${item.hasEmbedLyric ? '<span class="w-4 h-4 flex items-center justify-center bg-emerald-500 text-white rounded text-[8px] font-bold shadow-sm shadow-emerald-500/20" title="已嵌入歌词标签">词</span>' : ''}
+                                ${item.hasCover ? '<span class="w-4 h-4 flex items-center justify-center bg-blue-500 text-white rounded text-[8px] font-bold shadow-sm shadow-blue-500/20" title="已嵌入封面">封</span>' : ''}
                             </div>
                         </div>
                     </div>
@@ -597,13 +606,13 @@ window.LocalMusicManager = {
                 </div>
 
                 <!-- Action Button -->
-                <div class="col-span-3 sm:col-span-2 md:col-span-2 lg:col-span-2 flex items-center justify-end gap-1 sm:gap-2">
+                <div class="col-span-3 sm:col-span-2 md:col-span-2 lg:col-span-2 flex items-center justify-end gap-1 md:gap-2">
                     <div class="hidden lg:block text-xs text-right pr-2 font-mono t-text-muted shrink-0 mr-1">
                         ${formatSize(item.size)}
                     </div>
                     ${isUnindexed ? `
                         <button onclick="window.LocalMusicManager.openManualIndexModal(${index})"
-                                class="w-8 h-8 md:w-7 md:h-7 flex items-center justify-center rounded-full bg-emerald-500 text-white hover:bg-emerald-600 transition-all shadow-sm shrink-0" title="手动关联">
+                                class="hidden sm:flex w-8 h-8 md:w-7 md:h-7 items-center justify-center rounded-full bg-emerald-500 text-white hover:bg-emerald-600 transition-all shadow-sm shrink-0" title="手动关联">
                             <i class="fas fa-link text-[10px]"></i>
                         </button>
                     ` : ''}
@@ -1330,7 +1339,7 @@ window.LocalMusicManager = {
             const originalIdx = results.findIndex(r => r === item);
 
             html += `
-                <div class="flex items-center p-4 t-bg-main border t-border-main rounded-3xl hover:border-emerald-400 group transition-all shadow-sm">
+                <div class="flex items-center p-3 md:p-4 t-bg-main border t-border-main rounded-2xl md:rounded-3xl hover:border-emerald-400 group transition-all shadow-sm">
                     <div class="w-12 h-12 rounded-xl overflow-hidden mr-4 flex-shrink-0 bg-gray-100 border t-border-main">
                         <img src="${item.img || '/music/assets/logo.svg'}" onerror="this.src='/music/assets/logo.svg'" loading="lazy" class="w-full h-full object-cover">
                     </div>
