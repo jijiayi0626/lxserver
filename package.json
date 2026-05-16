@@ -16,7 +16,9 @@
     "prd": "pm2 start ecosystem.config.js --env production",
     "publish": "node publish",
     "electron:build": "npm run build",
-    "electron:dist": "npm run electron:build && electron-builder"
+    "electron:dist": "npm run electron:build && electron-builder",
+    "deploy": "wrangler deploy",
+    "preview": "wrangler dev"
   },
   "engines": {
     "node": ">= 16",
@@ -83,7 +85,8 @@
     "tsc-alias": "^1.8.16",
     "tsconfig-paths": "^4.2.0",
     "tsx": "^4.21.0",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "wrangler": "^4.92.0"
   },
   "nodemonConfig": {
     "ext": "js,ts",
